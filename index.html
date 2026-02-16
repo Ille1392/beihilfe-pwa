@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Beihilfe Belege Manager - Erfassen und synchronisieren Sie Ihre Beihilfebelege">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+    <title>Beihilfe Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #4caf50;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --pink: #e91e63;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 10px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f7ff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: var(--primary);
+        }
+
+        .sync-status.syncing {
+            background: #fff3e0;
+            color: var(--warning);
+        }
+
+        .sync-status.synced {
+            background: #e8f5e9;
+            color: var(--success);
+        }
+
+        .install-prompt {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-btn {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 8px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .upload-section {
+            border: 3px dashed var(--primary);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-section:active {
+            background: #e8ebff;
+            transform: scale(0.98);
+        }
+
+        .upload-section.dragover {
+            background: #e8ebff;
+            border-color: var(--secondary);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 150px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        select, input[type="number"], input[type="text"], input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .calculation-result {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .calculation-result.show {
+            display: block;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.05em;
+            color: var(--primary);
+        }
+
+        .beleg-item {
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .beleg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .beleg-person {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .beleg-person.frau {
+            background: var(--pink);
+        }
+
+        .beleg-person.kind {
+            background: var(--success);
+        }
+
+        .beleg-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .detail-item {
+            background: #f8f9ff;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .detail-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+            font-size: 1em;
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .no-belege {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+            font-size: 1em;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            color: #666;
+            font-size: 0.85em;
+            transition: color 0.3s;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item .icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: var(--primary);
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 5px;
+                padding-bottom: 70px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-value {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💼 Beihilfe Manager</h1>
+            <div class="sync-status" id="syncStatus">
+                <span id="syncIcon">☁️</span>
+                <span id="syncText">Cloud-Sync bereit</span>
+            </div>
+        </div>
+
+        <div class="install-prompt" id="installPrompt">
+            <div>
+                <strong>📱 App installieren</strong><br>
+                <small>Auf Homescreen für schnellen Zugriff</small>
+            </div>
+            <button class="install-btn" id="installBtn">Installieren</button>
+        </div>
+
+        <!-- Statistik Sektion -->
+        <div id="statsSection" class="section active">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Gesamtbetrag</div>
+                    <div class="stat-value" id="totalAmount">0,00 €</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Beihilfe</div>
+                    <div class="stat-value" id="totalBeihilfe">0,00 €</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">PKV</div>
+                    <div class="stat-value" id="totalPKV">0,00 €</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 15px; color: #333; font-size: 1.3em;">📋 Ihre Belege</h2>
+                <div class="loading" id="loadingBelege">
+                    <div style="font-size: 2em;">⏳</div>
+                    <div>Belege werden geladen...</div>
+                </div>
+                <div id="belegeListe">
+                    <div class="no-belege">Noch keine Belege erfasst</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Neuer Beleg Sektion -->
+        <div id="newBelegSection" class="section">
+            <div class="card">
+                <h2 style="margin-bottom: 15px; color: #333; font-size: 1.3em;">📄 Neuer Beleg</h2>
+                
+                <div class="upload-section" id="uploadSection">
+                    <div class="upload-icon">📎</div>
+                    <p style="font-size: 1.1em; color: var(--primary); font-weight: 600;">Beleg hochladen</p>
+                    <p style="color: #999; margin-top: 8px; font-size: 0.9em;">Antippen zum Auswählen</p>
+                    <input type="file" id="fileInput" accept="image/*,.pdf" capture="environment">
+                </div>
+
+                <div id="uploadedFileName" style="margin-top: 10px; color: var(--primary); font-weight: 600; font-size: 0.9em;"></div>
+                <img id="previewImage" class="preview-image" style="display: none;">
+
+                <form id="belegForm">
+                    <div class="form-group">
+                        <label for="person">Person *</label>
+                        <select id="person" required>
+                            <option value="">-- Bitte wählen --</option>
+                            <option value="frau">Ehefrau (70% Beihilfe)</option>
+                            <option value="kind">Kind (80% Beihilfe)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="betrag">Rechnungsbetrag (€) *</label>
+                        <input type="number" id="betrag" step="0.01" min="0" required placeholder="0,00">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="datum">Rechnungsdatum *</label>
+                        <input type="date" id="datum" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="beschreibung">Beschreibung</label>
+                        <input type="text" id="beschreibung" placeholder="z.B. Zahnarzt, Apotheke...">
+                    </div>
+
+                    <div class="calculation-result" id="calculationResult">
+                        <div class="result-row">
+                            <span class="result-label">Rechnungsbetrag:</span>
+                            <span class="result-value" id="resRechnung">0,00 €</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Beihilfe übernimmt:</span>
+                            <span class="result-value" id="resBeihilfe">0,00 €</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">PKV übernimmt:</span>
+                            <span class="result-value" id="resPKV">0,00 €</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">💾 Beleg speichern</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" data-section="statsSection">
+            <span class="icon">📊</span>
+            <span>Übersicht</span>
+        </div>
+        <div class="nav-item" data-section="newBelegSection">
+            <span class="icon">➕</span>
+            <span>Neu</span>
+        </div>
+    </div>
+
+    <script>
+        // Service Worker registrieren
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => {
+                console.log('Service Worker Registrierung fehlgeschlagen:', err);
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.classList.add('show');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installPrompt.classList.remove('show');
+        });
+
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetSection = item.dataset.section;
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                sections.forEach(sec => sec.classList.remove('active'));
+                
+                item.classList.add('active');
+                document.getElementById(targetSection).classList.add('active');
+            });
+        });
+
+        // Cloud Storage Funktionen
+        const STORAGE_PREFIX = 'beihilfe:';
+        
+        async function saveToCloud(key, data) {
+            try {
+                updateSyncStatus('syncing');
+                await window.storage.set(STORAGE_PREFIX + key, JSON.stringify(data), true);
+                updateSyncStatus('synced');
+                return true;
+            } catch (error) {
+                console.error('Cloud Save Error:', error);
+                updateSyncStatus('error');
+                return false;
+            }
+        }
+
+        async function loadFromCloud(key) {
+            try {
+                const result = await window.storage.get(STORAGE_PREFIX + key, true);
+                return result ? JSON.parse(result.value) : null;
+            } catch (error) {
+                console.error('Cloud Load Error:', error);
+                return null;
+            }
+        }
+
+        async function listCloudBelege() {
+            try {
+                const result = await window.storage.list(STORAGE_PREFIX + 'beleg:', true);
+                return result ? result.keys : [];
+            } catch (error) {
+                console.error('Cloud List Error:', error);
+                return [];
+            }
+        }
+
+        async function deleteFromCloud(key) {
+            try {
+                updateSyncStatus('syncing');
+                await window.storage.delete(STORAGE_PREFIX + key, true);
+                updateSyncStatus('synced');
+                return true;
+            } catch (error) {
+                console.error('Cloud Delete Error:', error);
+                updateSyncStatus('error');
+                return false;
+            }
+        }
+
+        function updateSyncStatus(status) {
+            const syncStatus = document.getElementById('syncStatus');
+            const syncIcon = document.getElementById('syncIcon');
+            const syncText = document.getElementById('syncText');
+            
+            syncStatus.className = 'sync-status';
+            
+            switch(status) {
+                case 'syncing':
+                    syncStatus.classList.add('syncing');
+                    syncIcon.textContent = '🔄';
+                    syncText.textContent = 'Synchronisiere...';
+                    break;
+                case 'synced':
+                    syncStatus.classList.add('synced');
+                    syncIcon.textContent = '✅';
+                    syncText.textContent = 'Synchronisiert';
+                    setTimeout(() => updateSyncStatus('ready'), 2000);
+                    break;
+                case 'error':
+                    syncIcon.textContent = '⚠️';
+                    syncText.textContent = 'Sync-Fehler';
+                    break;
+                default:
+                    syncIcon.textContent = '☁️';
+                    syncText.textContent = 'Cloud-Sync bereit';
+            }
+        }
+
+        // Upload Funktionalität
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const uploadedFileName = document.getElementById('uploadedFileName');
+        const previewImage = document.getElementById('previewImage');
+        
+        let uploadedFile = null;
+        let uploadedImageBase64 = null;
+
+        uploadSection.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        function handleFileUpload(file) {
+            uploadedFile = file;
+            uploadedFileName.textContent = `📎 ${file.name}`;
+            
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImageBase64 = e.target.result;
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImage.style.display = 'none';
+                uploadedImageBase64 = null;
+            }
+        }
+
+        // Berechnung
+        const personSelect = document.getElementById('person');
+        const betragInput = document.getElementById('betrag');
+        const calculationResult = document.getElementById('calculationResult');
+
+        function berechneAufteilung() {
+            const person = personSelect.value;
+            const betrag = parseFloat(betragInput.value) || 0;
+
+            if (person && betrag > 0) {
+                let beihilfeProzent = person === 'frau' ? 0.70 : 0.80;
+                const beihilfeBetrag = betrag * beihilfeProzent;
+                const pkvBetrag = betrag - beihilfeBetrag;
+
+                document.getElementById('resRechnung').textContent = formatEuro(betrag);
+                document.getElementById('resBeihilfe').textContent = formatEuro(beihilfeBetrag);
+                document.getElementById('resPKV').textContent = formatEuro(pkvBetrag);
+
+                calculationResult.classList.add('show');
+            } else {
+                calculationResult.classList.remove('show');
+            }
+        }
+
+        personSelect.addEventListener('change', berechneAufteilung);
+        betragInput.addEventListener('input', berechneAufteilung);
+
+        // Formular absenden
+        document.getElementById('belegForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const person = personSelect.value;
+            const betrag = parseFloat(betragInput.value);
+            const datum = document.getElementById('datum').value;
+            const beschreibung = document.getElementById('beschreibung').value;
+
+            let beihilfeProzent = person === 'frau' ? 0.70 : 0.80;
+            const beihilfeBetrag = betrag * beihilfeProzent;
+            const pkvBetrag = betrag - beihilfeBetrag;
+
+            const belegId = Date.now();
+            const neuerBeleg = {
+                id: belegId,
+                person,
+                betrag,
+                datum,
+                beschreibung,
+                beihilfeBetrag,
+                pkvBetrag,
+                beihilfeProzent: beihilfeProzent * 100,
+                dateiname: uploadedFile ? uploadedFile.name : null,
+                image: uploadedImageBase64,
+                erstellt: new Date().toISOString()
+            };
+
+            // In Cloud speichern
+            const success = await saveToCloud('beleg:' + belegId, neuerBeleg);
+            
+            if (success) {
+                // Formular zurücksetzen
+                e.target.reset();
+                calculationResult.classList.remove('show');
+                uploadedFileName.textContent = '';
+                previewImage.style.display = 'none';
+                uploadedFile = null;
+                uploadedImageBase64 = null;
+
+                // Zur Übersicht wechseln
+                navItems[0].click();
+                
+                // Anzeige aktualisieren
+                await loadBelege();
+                
+                alert('✅ Beleg erfolgreich gespeichert und synchronisiert!');
+            } else {
+                alert('❌ Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+            }
+        });
+
+        // Belege laden und anzeigen
+        async function loadBelege() {
+            const loadingEl = document.getElementById('loadingBelege');
+            loadingEl.classList.add('show');
+            
+            try {
+                const belegKeys = await listCloudBelege();
+                const belege = [];
+                
+                for (const key of belegKeys) {
+                    const beleg = await loadFromCloud(key.replace(STORAGE_PREFIX, ''));
+                    if (beleg) belege.push(beleg);
+                }
+                
+                belege.sort((a, b) => new Date(b.erstellt) - new Date(a.erstellt));
+                
+                renderBelege(belege);
+                updateStats(belege);
+            } catch (error) {
+                console.error('Fehler beim Laden:', error);
+            } finally {
+                loadingEl.classList.remove('show');
+            }
+        }
+
+        function renderBelege(belege) {
+            const liste = document.getElementById('belegeListe');
+            
+            if (belege.length === 0) {
+                liste.innerHTML = '<div class="no-belege">Noch keine Belege erfasst</div>';
+                return;
+            }
+
+            liste.innerHTML = belege.map(beleg => `
+                <div class="beleg-item">
+                    <div class="beleg-header">
+                        <div>
+                            <span class="beleg-person ${beleg.person}">${beleg.person === 'frau' ? 'Ehefrau' : 'Kind'}</span>
+                            ${beleg.beschreibung ? `<span style="margin-left: 8px; color: #666; font-size: 0.9em;">${beleg.beschreibung}</span>` : ''}
+                        </div>
+                        <button class="delete-btn" onclick="deleteBeleg(${beleg.id})">🗑️</button>
+                    </div>
+                    ${beleg.dateiname ? `<div style="color: #999; font-size: 0.85em; margin-bottom: 8px;">📎 ${beleg.dateiname}</div>` : ''}
+                    ${beleg.image ? `<img src="${beleg.image}" class="preview-image" style="display: block; margin-bottom: 10px;">` : ''}
+                    <div style="color: #999; font-size: 0.85em; margin-bottom: 10px;">${formatDatum(beleg.datum)}</div>
+                    <div class="beleg-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Rechnungsbetrag</div>
+                            <div class="detail-value">${formatEuro(beleg.betrag)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Beihilfe (${beleg.beihilfeProzent}%)</div>
+                            <div class="detail-value" style="color: var(--success);">${formatEuro(beleg.beihilfeBetrag)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">PKV (${100 - beleg.beihilfeProzent}%)</div>
+                            <div class="detail-value" style="color: var(--warning);">${formatEuro(beleg.pkvBetrag)}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteBeleg(id) {
+            if (confirm('Möchten Sie diesen Beleg wirklich löschen?')) {
+                const success = await deleteFromCloud('beleg:' + id);
+                if (success) {
+                    await loadBelege();
+                } else {
+                    alert('❌ Fehler beim Löschen. Bitte versuchen Sie es erneut.');
+                }
+            }
+        }
+
+        function updateStats(belege) {
+            const total = belege.reduce((sum, b) => sum + b.betrag, 0);
+            const totalBeihilfe = belege.reduce((sum, b) => sum + b.beihilfeBetrag, 0);
+            const totalPKV = belege.reduce((sum, b) => sum + b.pkvBetrag, 0);
+
+            document.getElementById('totalAmount').textContent = formatEuro(total);
+            document.getElementById('totalBeihilfe').textContent = formatEuro(totalBeihilfe);
+            document.getElementById('totalPKV').textContent = formatEuro(totalPKV);
+        }
+
+        function formatEuro(betrag) {
+            return new Intl.NumberFormat('de-DE', { 
+                style: 'currency', 
+                currency: 'EUR' 
+            }).format(betrag);
+        }
+
+        function formatDatum(datum) {
+            return new Date(datum).toLocaleDateString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        // Initial laden
+        loadBelege();
+
+        // Auto-Sync alle 30 Sekunden
+        setInterval(loadBelege, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "Beihilfe Manager",
+  "short_name": "Beihilfe",
+  "description": "Erfassen und verwalten Sie Ihre Beihilfebelege mit automatischer Synchronisation",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='15%' fill='%23667eea'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-size='350' fill='white'>💼</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "de-DE",
+  "dir": "ltr"
+}
