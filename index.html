@@ -1,1 +1,324 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
+    <title>Beihilfe Manager</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--primary:#667eea;--secondary:#764ba2;--success:#4caf50;--danger:#f44336;--warning:#ff9800;--pink:#e91e63}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);min-height:100vh;padding:10px;padding-bottom:80px}
+        .container{max-width:900px;margin:0 auto}
+        #setupBanner{background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:20px;margin-bottom:15px;display:none}
+        #setupBanner.show{display:block}
+        #setupBanner h3{color:#856404;margin-bottom:10px}
+        #setupBanner p{color:#856404;margin-bottom:10px;font-size:.95em}
+        #setupBanner input{width:100%;padding:10px;border:2px solid #ffc107;border-radius:8px;font-size:14px;margin-bottom:10px;font-family:monospace}
+        #setupBanner button{background:#ffc107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%}
+        .header{background:white;border-radius:15px;padding:20px;margin-bottom:15px;box-shadow:0 5px 20px rgba(0,0,0,.15);text-align:center}
+        .header h1{color:var(--primary);font-size:1.8em;margin-bottom:10px}
+        .sync-status{display:inline-flex;align-items:center;gap:8px;background:#f0f7ff;padding:8px 16px;border-radius:20px;font-size:.9em;color:var(--primary)}
+        .sync-status.syncing{background:#fff3e0;color:var(--warning)}
+        .sync-status.synced{background:#e8f5e9;color:var(--success)}
+        .sync-status.error{background:#ffebee;color:var(--danger)}
+        .card{background:white;border-radius:15px;padding:20px;margin-bottom:15px;box-shadow:0 5px 15px rgba(0,0,0,.1)}
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:15px}
+        .stat-card{background:white;border-radius:12px;padding:20px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.1)}
+        .stat-value{font-size:1.5em;font-weight:700;color:var(--primary);margin-top:8px}
+        .stat-label{color:#666;font-size:.85em}
+        .upload-section{border:3px dashed var(--primary);border-radius:10px;padding:25px;text-align:center;background:#f8f9ff;cursor:pointer;transition:all .3s;margin-bottom:20px}
+        .upload-section:active{background:#e8ebff;transform:scale(.98)}
+        input[type=file]{display:none}
+        .upload-icon{font-size:2.5em;margin-bottom:10px}
+        .preview-image{max-width:100%;max-height:150px;margin:10px 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+        .form-group{margin:15px 0}
+        label{display:block;margin-bottom:8px;color:#333;font-weight:600;font-size:.95em}
+        select,input[type=number],input[type=text],input[type=date]{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;transition:border-color .3s}
+        select:focus,input:focus{outline:none;border-color:var(--primary)}
+        .btn{background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);color:white;border:none;padding:15px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;width:100%;transition:transform .2s;margin-top:10px}
+        .btn:active{transform:scale(.98)}
+        .btn:disabled{opacity:.6;cursor:not-allowed}
+        .calculation-result{background:#f8f9ff;border-radius:10px;padding:15px;margin-top:15px;display:none}
+        .calculation-result.show{display:block}
+        .result-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e0e0e0}
+        .result-row:last-child{border-bottom:none;font-weight:700;font-size:1.05em;color:var(--primary)}
+        .beleg-item{background:white;border:2px solid #f0f0f0;border-radius:10px;padding:15px;margin-bottom:12px}
+        .beleg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+        .beleg-person{display:inline-block;padding:5px 12px;border-radius:15px;font-size:.85em;font-weight:600;color:white;background:var(--primary)}
+        .beleg-person.frau{background:var(--pink)}
+        .beleg-person.kind{background:var(--success)}
+        .beleg-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
+        .detail-item{background:#f8f9ff;padding:10px;border-radius:6px}
+        .detail-label{font-size:.8em;color:#666;margin-bottom:4px}
+        .detail-value{font-weight:600;color:#333;font-size:1em}
+        .delete-btn{background:var(--danger);color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:.85em}
+        .no-belege{text-align:center;color:#999;padding:30px}
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e0e0e0;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,.1);z-index:1000}
+        .nav-item{flex:1;text-align:center;padding:8px;cursor:pointer;color:#666;font-size:.85em}
+        .nav-item.active{color:var(--primary)}
+        .nav-item .icon{font-size:1.5em;display:block;margin-bottom:4px}
+        .section{display:none}
+        .section.active{display:block}
+        .help-box{background:#fff8e1;padding:15px;border-radius:8px;margin-top:15px}
+        .help-box ol{margin-left:20px;line-height:2.2em}
+        .spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+<div class="container">
 
+    <div id="setupBanner" class="show">
+        <h3>⚙️ Einmalige Einrichtung: Firebase Datenbank</h3>
+        <p>Fügen Sie Ihre Firebase-URL ein, um Cloud-Synchronisation zwischen allen Geräten zu aktivieren.</p>
+        <input type="text" id="firebaseUrl" placeholder="https://beihilfe-app-default-rtdb.europe-west1.firebasedatabase.app">
+        <button onclick="saveConfig()">✅ Verbindung herstellen & speichern</button>
+        <p style="margin-top:10px"><a href="#" id="helpLink" style="color:#856404;font-weight:600;">❓ Wie erhalte ich die Firebase-URL? (Anleitung anzeigen)</a></p>
+        <div id="setupHelp" style="display:none" class="help-box">
+            <b>So richten Sie Firebase ein (ca. 5 Minuten, kostenlos):</b>
+            <ol>
+                <li>Öffnen Sie <a href="https://console.firebase.google.com" target="_blank" style="color:#856404;font-weight:bold;">console.firebase.google.com</a> (Google-Konto nötig)</li>
+                <li>Klicken Sie auf <b>„Projekt hinzufügen"</b></li>
+                <li>Projektname: <b>beihilfe-app</b> → Weiter → Analytics deaktivieren → Projekt erstellen</li>
+                <li>Im linken Menü: Klicken Sie auf <b>„Realtime Database"</b></li>
+                <li>Klicken Sie <b>„Datenbank erstellen"</b></li>
+                <li>Standort: <b>europe-west1 (Belgien)</b> → Weiter</li>
+                <li>Sicherheitsregeln: <b>„Im Testmodus starten"</b> → Fertig</li>
+                <li>Kopieren Sie die URL oben (sieht so aus: <i>https://beihilfe-app-default-rtdb.europe-west1.firebasedatabase.app</i>)</li>
+                <li>Fügen Sie die URL oben ein und klicken Sie <b>„Verbindung herstellen"</b></li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>💼 Beihilfe Manager</h1>
+        <div class="sync-status" id="syncStatus">
+            <span id="syncIcon">☁️</span>
+            <span id="syncText">Nicht verbunden</span>
+        </div>
+    </div>
+
+    <div id="statsSection" class="section active">
+        <div class="stats">
+            <div class="stat-card"><div class="stat-label">Gesamtbetrag</div><div class="stat-value" id="totalAmount">0,00 €</div></div>
+            <div class="stat-card"><div class="stat-label">Beihilfe übernimmt</div><div class="stat-value" id="totalBeihilfe">0,00 €</div></div>
+            <div class="stat-card"><div class="stat-label">PKV übernimmt</div><div class="stat-value" id="totalPKV">0,00 €</div></div>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom:15px;color:#333;font-size:1.3em">📋 Ihre Belege</h2>
+            <div id="belegeListe"><div class="no-belege">Noch keine Belege erfasst</div></div>
+        </div>
+    </div>
+
+    <div id="newBelegSection" class="section">
+        <div class="card">
+            <h2 style="margin-bottom:15px;color:#333;font-size:1.3em">📄 Neuer Beleg</h2>
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📎</div>
+                <p style="font-size:1.1em;color:var(--primary);font-weight:600">Beleg hochladen oder fotografieren</p>
+                <p style="color:#999;margin-top:8px;font-size:.9em">Antippen zum Auswählen</p>
+                <input type="file" id="fileInput" accept="image/*,.pdf" capture="environment">
+            </div>
+            <div id="uploadedFileName" style="color:var(--primary);font-weight:600;font-size:.9em;margin-bottom:5px"></div>
+            <img id="previewImage" class="preview-image" style="display:none">
+            <form id="belegForm">
+                <div class="form-group">
+                    <label for="person">Person *</label>
+                    <select id="person" required>
+                        <option value="">-- Bitte wählen --</option>
+                        <option value="frau">Ehefrau (70% Beihilfe)</option>
+                        <option value="kind">Kind (80% Beihilfe)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="betrag">Rechnungsbetrag (€) *</label>
+                    <input type="number" id="betrag" step="0.01" min="0" required placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label for="datum">Rechnungsdatum *</label>
+                    <input type="date" id="datum" required>
+                </div>
+                <div class="form-group">
+                    <label for="beschreibung">Beschreibung</label>
+                    <input type="text" id="beschreibung" placeholder="z.B. Zahnarzt, Apotheke...">
+                </div>
+                <div class="calculation-result" id="calculationResult">
+                    <div class="result-row"><span>Rechnungsbetrag:</span><span id="resRechnung">0,00 €</span></div>
+                    <div class="result-row"><span>Beihilfe übernimmt:</span><span id="resBeihilfe" style="color:var(--success)">0,00 €</span></div>
+                    <div class="result-row"><span>PKV übernimmt:</span><span id="resPKV" style="color:var(--warning)">0,00 €</span></div>
+                </div>
+                <button type="submit" class="btn" id="saveBtn">💾 Beleg speichern</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-item active" data-section="statsSection"><span class="icon">📊</span><span>Übersicht</span></div>
+    <div class="nav-item" data-section="newBelegSection"><span class="icon">➕</span><span>Neu</span></div>
+</div>
+
+<script>
+let db=null;
+
+function saveConfig(){
+    const url=document.getElementById('firebaseUrl').value.trim();
+    if(!url||!url.includes('firebasedatabase.app')){alert('❌ Ungültige URL!\nSie muss auf .firebasedatabase.app enden.');return;}
+    localStorage.setItem('firebaseUrl',url);
+    initFirebase(url);
+}
+
+function initFirebase(url){
+    try{
+        if(firebase.apps.length){firebase.apps.forEach(a=>a.delete());}
+        const app=firebase.initializeApp({databaseURL:url});
+        db=firebase.database(app);
+        db.ref('.info/connected').on('value',snap=>{
+            if(snap.val()===true){
+                setSyncStatus('synced','✅','Verbunden & synchron');
+                document.getElementById('setupBanner').style.display='none';
+                startSync();
+            } else {
+                setSyncStatus('syncing','🔄','Verbinde...');
+            }
+        });
+    } catch(e){
+        setSyncStatus('error','❌','Verbindungsfehler');
+        alert('Fehler: '+e.message);
+    }
+}
+
+function setSyncStatus(cls,icon,text){
+    document.getElementById('syncStatus').className='sync-status '+cls;
+    document.getElementById('syncIcon').textContent=icon;
+    document.getElementById('syncText').textContent=text;
+}
+
+function startSync(){
+    db.ref('belege').on('value',snap=>{
+        const data=snap.val()||{};
+        const belege=Object.values(data).sort((a,b)=>new Date(b.erstellt)-new Date(a.erstellt));
+        renderBelege(belege);
+        updateStats(belege);
+    });
+}
+
+// Upload
+let imgBase64=null,fileName=null;
+document.getElementById('uploadSection').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;
+    fileName=f.name;
+    document.getElementById('uploadedFileName').textContent='📎 '+f.name;
+    if(f.type.startsWith('image/')){
+        const r=new FileReader();
+        r.onload=ev=>{imgBase64=ev.target.result;const img=document.getElementById('previewImage');img.src=ev.target.result;img.style.display='block';};
+        r.readAsDataURL(f);
+    } else {imgBase64=null;document.getElementById('previewImage').style.display='none';}
+});
+
+// Berechnung
+function calc(){
+    const p=document.getElementById('person').value,b=parseFloat(document.getElementById('betrag').value)||0;
+    if(!p||b<=0){document.getElementById('calculationResult').classList.remove('show');return;}
+    const pct=p==='frau'?.70:.80;
+    document.getElementById('resRechnung').textContent=eur(b);
+    document.getElementById('resBeihilfe').textContent=eur(b*pct);
+    document.getElementById('resPKV').textContent=eur(b*(1-pct));
+    document.getElementById('calculationResult').classList.add('show');
+}
+document.getElementById('person').addEventListener('change',calc);
+document.getElementById('betrag').addEventListener('input',calc);
+
+// Speichern
+document.getElementById('belegForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!db){alert('⚠️ Bitte zuerst Firebase einrichten! Scrollen Sie nach oben zum gelben Banner.');return;}
+    const btn=document.getElementById('saveBtn');
+    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Speichere...';
+    const person=document.getElementById('person').value;
+    const betrag=parseFloat(document.getElementById('betrag').value);
+    const pct=person==='frau'?.70:.80;
+    const id=Date.now().toString();
+    const beleg={id,person,betrag,datum:document.getElementById('datum').value,
+        beschreibung:document.getElementById('beschreibung').value,
+        beihilfeBetrag:betrag*pct,pkvBetrag:betrag*(1-pct),
+        beihilfeProzent:pct*100,dateiname:fileName,image:imgBase64,
+        erstellt:new Date().toISOString()};
+    try{
+        await db.ref('belege/'+id).set(beleg);
+        e.target.reset();
+        document.getElementById('calculationResult').classList.remove('show');
+        document.getElementById('uploadedFileName').textContent='';
+        document.getElementById('previewImage').style.display='none';
+        imgBase64=null;fileName=null;
+        document.querySelector('[data-section="statsSection"]').click();
+    } catch(err){
+        alert('❌ Fehler beim Speichern: '+err.message);
+    }
+    btn.disabled=false;btn.innerHTML='💾 Beleg speichern';
+});
+
+window.deleteBeleg=async function(id){
+    if(!confirm('Beleg wirklich löschen?'))return;
+    try{await db.ref('belege/'+id).remove();}catch(e){alert('Fehler: '+e.message);}
+};
+
+function renderBelege(belege){
+    const el=document.getElementById('belegeListe');
+    if(!belege.length){el.innerHTML='<div class="no-belege">Noch keine Belege erfasst</div>';return;}
+    el.innerHTML=belege.map(b=>`
+        <div class="beleg-item">
+            <div class="beleg-header">
+                <div>
+                    <span class="beleg-person ${b.person}">${b.person==='frau'?'Ehefrau':'Kind'}</span>
+                    ${b.beschreibung?`<span style="margin-left:8px;color:#666;font-size:.9em">${b.beschreibung}</span>`:''}
+                </div>
+                <button class="delete-btn" onclick="deleteBeleg('${b.id}')">🗑️</button>
+            </div>
+            ${b.dateiname?`<div style="color:#999;font-size:.85em;margin-bottom:8px">📎 ${b.dateiname}</div>`:''}
+            ${b.image?`<img src="${b.image}" class="preview-image" style="display:block;margin-bottom:10px">`:''}
+            <div style="color:#999;font-size:.85em;margin-bottom:10px">${datFmt(b.datum)}</div>
+            <div class="beleg-details">
+                <div class="detail-item"><div class="detail-label">Rechnungsbetrag</div><div class="detail-value">${eur(b.betrag)}</div></div>
+                <div class="detail-item"><div class="detail-label">Beihilfe (${b.beihilfeProzent}%)</div><div class="detail-value" style="color:var(--success)">${eur(b.beihilfeBetrag)}</div></div>
+                <div class="detail-item"><div class="detail-label">PKV (${100-b.beihilfeProzent}%)</div><div class="detail-value" style="color:var(--warning)">${eur(b.pkvBetrag)}</div></div>
+            </div>
+        </div>`).join('');
+}
+
+function updateStats(belege){
+    document.getElementById('totalAmount').textContent=eur(belege.reduce((s,b)=>s+b.betrag,0));
+    document.getElementById('totalBeihilfe').textContent=eur(belege.reduce((s,b)=>s+b.beihilfeBetrag,0));
+    document.getElementById('totalPKV').textContent=eur(belege.reduce((s,b)=>s+b.pkvBetrag,0));
+}
+
+function eur(v){return new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(v);}
+function datFmt(d){return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
+
+// Navigation
+document.querySelectorAll('.nav-item').forEach(item=>{
+    item.addEventListener('click',()=>{
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        item.classList.add('active');
+        document.getElementById(item.dataset.section).classList.add('active');
+    });
+});
+
+document.getElementById('helpLink').addEventListener('click',e=>{
+    e.preventDefault();
+    const h=document.getElementById('setupHelp');
+    h.style.display=h.style.display==='none'?'block':'none';
+});
+
+// Auto-Connect
+const saved=localStorage.getItem('firebaseUrl');
+if(saved){document.getElementById('firebaseUrl').value=saved;initFirebase(saved);}
+</script>
+</body>
+</html>
