@@ -1,476 +1,584 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#667eea">
-    <link rel="manifest" href="manifest.json">
-    <title>BeihilfeCheck</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        :root{--primary:#667eea;--secondary:#764ba2;--success:#4caf50;--danger:#f44336;--warning:#ff9800;--pink:#e91e63}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);min-height:100vh;padding:10px;padding-bottom:80px}
-        .container{max-width:900px;margin:0 auto}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#00c9a7">
+<link rel="manifest" href="manifest.json">
+<title>BeihilfeCheck</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600;700&family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
 
-        /* Setup Banner */
-        #setupBanner{background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:20px;margin-bottom:15px;display:none}
-        #setupBanner.show{display:block}
-        #setupBanner h3{color:#856404;margin-bottom:10px}
-        #setupBanner p{color:#856404;margin-bottom:10px;font-size:.95em}
-        #setupBanner input{width:100%;padding:10px;border:2px solid #ffc107;border-radius:8px;font-size:14px;margin-bottom:10px;font-family:monospace}
-        #setupBanner .setup-btn{background:#ffc107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%}
-        .help-box{background:#fff8e1;padding:15px;border-radius:8px;margin-top:15px}
-        .help-box ol{margin-left:20px;line-height:2.2em}
+/* ══════════════════════════════════════
+   SPLASH SCREEN
+══════════════════════════════════════ */
+#splashScreen{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;
+  background:linear-gradient(135deg,#00c9a7 0%,#4facfe 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:1;transition:opacity .5s;
+}
+#splashScreen.hide{opacity:0;pointer-events:none}
+.splash-logo{width:100px;height:100px;animation:pulse 1.5s ease-in-out infinite}
+.splash-title{font-family:'Nunito',sans-serif;font-size:2.5em;font-weight:900;color:white;margin-top:20px;letter-spacing:-1px;text-shadow:0 2px 20px rgba(0,0,0,.2)}
+.splash-subtitle{font-family:'Nunito Sans',sans-serif;font-size:1em;color:rgba(255,255,255,.9);margin-top:8px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.splash-loader{margin-top:40px;width:50px;height:50px;border:4px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-        /* Header */
-        .header{background:white;border-radius:15px;padding:20px;margin-bottom:15px;box-shadow:0 5px 20px rgba(0,0,0,.15);text-align:center}
-        .header h1{color:var(--primary);font-size:2em;font-weight:800;margin-bottom:10px;letter-spacing:-0.5px}
-        .sync-status{display:inline-flex;align-items:center;gap:8px;background:#f0f7ff;padding:8px 16px;border-radius:20px;font-size:.9em;color:var(--primary)}
-        .sync-status.syncing{background:#fff3e0;color:var(--warning)}
-        .sync-status.synced{background:#e8f5e9;color:var(--success)}
-        .sync-status.error{background:#ffebee;color:var(--danger)}
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#loginScreen{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998;
+  background:linear-gradient(135deg,#00c9a7 0%,#4facfe 100%);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;
+}
+#loginScreen.show{display:flex}
+.login-card{
+  background:white;border-radius:24px;padding:40px 30px;
+  max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.2);
+  text-align:center;
+}
+.login-logo{width:80px;height:80px;margin:0 auto 20px}
+.login-title{font-family:'Nunito',sans-serif;font-size:2em;font-weight:900;color:#2d3748;margin-bottom:8px}
+.login-subtitle{font-size:.95em;color:#718096;margin-bottom:30px}
+.google-btn{
+  background:white;border:2px solid #e8edf3;border-radius:12px;
+  padding:14px 24px;font-family:'Nunito Sans',sans-serif;font-size:1em;font-weight:700;
+  color:#2d3748;cursor:pointer;width:100%;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+.google-btn:hover{border-color:#00c9a7;box-shadow:0 4px 12px rgba(0,201,167,.2)}
+.google-btn:active{transform:scale(.98)}
+.google-icon{width:24px;height:24px}
+.login-footer{margin-top:20px;font-size:.85em;color:#718096}
 
-        /* Cards & Stats */
-        .card{background:white;border-radius:15px;padding:20px;margin-bottom:15px;box-shadow:0 5px 15px rgba(0,0,0,.1)}
-        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:15px}
-        .stat-card{background:white;border-radius:12px;padding:20px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.1)}
-        .stat-value{font-size:1.4em;font-weight:700;color:var(--primary);margin-top:8px}
-        .stat-label{color:#666;font-size:.85em}
+/* ══════════════════════════════════════
+   THEME VARIABLES
+══════════════════════════════════════ */
+:root, [data-theme="light"] {
+  --bg:#f0f4f8;--surface:#ffffff;--surface2:#fafbfc;--border:#e8edf3;
+  --text:#2d3748;--muted:#718096;--shadow:0 2px 16px rgba(0,0,0,.07);
+  --accent:#00c9a7;--accent-dim:#00a589;--accent-light:#e0faf5;
+  --accent2:#4facfe;--accent2-light:#e8f4ff;
+  --green:#00a589;--green-bg:#e0faf5;--orange:#ffa94d;--orange-bg:#fff4e6;
+  --red:#ff6b6b;--red-bg:#fff0f0;--blue:#4facfe;--blue-bg:#e8f4ff;
+  --badge50-bg:#fff4e6;--badge50-color:#ffa94d;
+  --badge70-bg:#fff0f0;--badge70-color:#ff6b6b;
+  --badge80-bg:#e0faf5;--badge80-color:#00a589;
+  --satz50-border:#ffa94d;--satz50-bg:#fff4e6;--satz50-color:#ffa94d;
+  --satz70-border:#ff6b6b;--satz70-bg:#fff0f0;--satz70-color:#ff6b6b;
+  --satz80-border:#00c9a7;--satz80-bg:#e0faf5;--satz80-color:#00a589;
+  --stat1-color:#00a589;
+  --save-bg:linear-gradient(135deg,#00c9a7,#4facfe);
+  --save-shadow:rgba(0,201,167,.35);
+  --logo-font:'Nunito',sans-serif;--body-font:'Nunito Sans',sans-serif;
+  --logo-accent:#00c9a7;
+  --heute-bg:#e8f4ff;--heute-color:#4facfe;--heute-border:rgba(79,172,254,.4);
+  --check-beihilfe-bg:#e0faf5;--check-beihilfe-border:rgba(0,201,167,.4);--check-beihilfe-color:#00a589;
+  --check-pkv-bg:#e8f4ff;--check-pkv-border:rgba(79,172,254,.4);--check-pkv-color:#4facfe;
+  --nav-active:#00a589;
+  --back-bg:rgba(255,255,255,.9);--back-color:#2d3748;
+  --toggle-bg:#2d3748;--toggle-color:#fff;
+}
+[data-theme="dark"] {
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#222536;--border:#2d3148;
+  --text:#e8eaf0;--muted:#6b7280;--shadow:0 2px 16px rgba(0,0,0,.3);
+  --accent:#f0c060;--accent-dim:#c49a30;--accent-light:rgba(240,192,96,.08);
+  --accent2:#60a5fa;--accent2-light:rgba(96,165,250,.08);
+  --green:#34d399;--green-bg:rgba(52,211,153,.08);
+  --orange:#f0c060;--orange-bg:rgba(240,192,96,.08);
+  --red:#f87171;--red-bg:rgba(248,113,113,.08);
+  --blue:#60a5fa;--blue-bg:rgba(96,165,250,.08);
+  --badge50-bg:rgba(240,192,96,.1);--badge50-color:#f0c060;
+  --badge70-bg:rgba(96,165,250,.1);--badge70-color:#60a5fa;
+  --badge80-bg:rgba(52,211,153,.1);--badge80-color:#34d399;
+  --satz50-border:#f0c060;--satz50-bg:rgba(240,192,96,.08);--satz50-color:#f0c060;
+  --satz70-border:#60a5fa;--satz70-bg:rgba(96,165,250,.08);--satz70-color:#60a5fa;
+  --satz80-border:#34d399;--satz80-bg:rgba(52,211,153,.08);--satz80-color:#34d399;
+  --stat1-color:#f0c060;
+  --save-bg:linear-gradient(135deg,#f0c060,#e8a820);
+  --save-shadow:rgba(240,192,96,.25);
+  --logo-font:'DM Serif Display',serif;--body-font:'DM Sans',sans-serif;
+  --logo-accent:#f0c060;
+  --heute-bg:rgba(96,165,250,.08);--heute-color:#60a5fa;--heute-border:rgba(96,165,250,.3);
+  --check-beihilfe-bg:rgba(52,211,153,.08);--check-beihilfe-border:rgba(52,211,153,.3);--check-beihilfe-color:#34d399;
+  --check-pkv-bg:rgba(96,165,250,.08);--check-pkv-border:rgba(96,165,250,.3);--check-pkv-color:#60a5fa;
+  --nav-active:#f0c060;
+  --back-bg:rgba(26,29,39,.9);--back-color:#e8eaf0;
+  --toggle-bg:#f0c060;--toggle-color:#0f1117;
+}
 
-        /* Upload */
-        .upload-section{border:3px dashed var(--primary);border-radius:10px;padding:25px;text-align:center;background:#f8f9ff;cursor:pointer;transition:all .3s;margin-bottom:20px}
-        .upload-section:active{background:#e8ebff;transform:scale(.98)}
-        input[type=file]{display:none}
-        .upload-icon{font-size:2.5em;margin-bottom:10px}
-        .preview-image{max-width:100%;max-height:150px;margin:10px 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+/* ══════════════════════════════════════
+   BASE STYLES
+══════════════════════════════════════ */
+body{font-family:var(--body-font);background:var(--bg);color:var(--text);min-height:100vh;padding:12px;padding-bottom:90px;transition:background .3s,color .3s}
+.container{max-width:520px;margin:0 auto}
+.theme-toggle{position:fixed;top:14px;right:14px;z-index:999;background:var(--toggle-bg);color:var(--toggle-color);border:none;width:44px;height:44px;border-radius:50%;font-size:1.2em;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:all .3s;display:flex;align-items:center;justify-content:center}
+.theme-toggle:active{transform:scale(.9)}
 
-        /* Form */
-        .form-group{margin:15px 0}
-        label{display:block;margin-bottom:8px;color:#333;font-weight:600;font-size:.95em}
-        input[type=number],input[type=text],input[type=date]{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;transition:border-color .3s}
-        input:focus{outline:none;border-color:var(--primary)}
+.app-header{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:20px 20px 16px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:12px;transition:background .3s,border-color .3s;position:relative;overflow:hidden}
+.app-header::after{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:radial-gradient(circle,rgba(0,201,167,.1) 0%,transparent 70%);pointer-events:none}
+.logo-wrap{display:flex;align-items:center;gap:12px;padding-right:44px}
+.logo-svg{width:52px;height:52px;transition:all .3s;flex-shrink:0}
+.logo-text .logo-title{font-family:var(--logo-font);font-size:1.75em;color:var(--text);line-height:1;letter-spacing:-.3px;font-weight:900;transition:font-family .3s}
+[data-theme="dark"] .logo-text .logo-title{font-weight:400}
+.logo-text .logo-title span{color:var(--accent);transition:color .3s}
+.logo-text .logo-sub{font-size:.72em;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:3px;font-weight:600}
+.user-info{display:flex;align-items:center;gap:10px;font-size:.85em;color:var(--muted)}
+.user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid var(--border)}
+.logout-btn{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.2);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.8em;font-weight:600;font-family:var(--body-font);margin-top:8px}
 
-        /* Datum + Heute Button */
-        .datum-row{display:flex;gap:10px;align-items:stretch}
-        .datum-row input{flex:1}
-        .heute-btn{background:var(--primary);color:white;border:none;padding:0 16px;border-radius:8px;font-size:.9em;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
-        .heute-btn:active{background:var(--secondary)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px 8px;text-align:center;box-shadow:var(--shadow);transition:all .3s}
+.stat-icon{font-size:1.3em;margin-bottom:5px}
+.stat-val{font-family:var(--logo-font);font-size:1.1em;font-weight:800;color:var(--stat1-color);margin-bottom:3px;transition:all .3s}
+[data-theme="dark"] .stat-val{font-weight:400}
+.stat-val.sv2{color:var(--green)}
+.stat-val.sv3{color:var(--blue)}
+.stat-lbl{font-size:.7em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 
-        /* Beihilfesatz Buttons */
-        .satz-buttons{display:flex;gap:10px;margin-top:5px}
-        .satz-btn{flex:1;padding:14px 10px;border:2px solid #e0e0e0;border-radius:10px;background:white;font-size:1.1em;font-weight:700;cursor:pointer;transition:all .2s;color:#666}
-        .satz-btn:active{transform:scale(.97)}
-        .satz-btn.active-50{border-color:#ff9800;background:#fff3e0;color:#ff9800}
-        .satz-btn.active-70{border-color:var(--pink);background:#fce4ec;color:var(--pink)}
-        .satz-btn.active-80{border-color:var(--success);background:#e8f5e9;color:var(--success)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:var(--shadow);transition:background .3s,border-color .3s}
+.card-title{font-size:1.05em;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 
-        /* Save Button */
-        .btn{background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);color:white;border:none;padding:15px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;width:100%;transition:transform .2s;margin-top:10px}
-        .btn:active{transform:scale(.98)}
-        .btn:disabled{opacity:.6;cursor:not-allowed}
+.upload-area{border:2px dashed var(--border);border-radius:14px;padding:22px;text-align:center;background:var(--surface2);cursor:pointer;transition:all .2s;margin-bottom:16px}
+.upload-area:active,.upload-area.over{border-color:var(--accent);background:var(--accent-light)}
+.upload-area .u-icon{font-size:2em;margin-bottom:7px}
+.upload-area .u-title{font-weight:700;color:var(--accent-dim);font-size:.92em}
+.upload-area .u-hint{font-size:.78em;color:var(--muted);margin-top:4px}
+input[type=file]{display:none}
+.preview-img{max-width:100%;max-height:140px;border-radius:10px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 
-        /* Calculation Result */
-        .calculation-result{background:#f8f9ff;border-radius:10px;padding:15px;margin-top:15px;display:none}
-        .calculation-result.show{display:block}
-        .result-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e0e0e0}
-        .result-row:last-child{border-bottom:none;font-weight:700;font-size:1.05em;color:var(--primary)}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.77em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:block}
+input[type=number],input[type=text],input[type=date]{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:.97em;font-family:var(--body-font);color:var(--text);background:var(--surface2);transition:all .2s}
+input:focus{outline:none;border-color:var(--accent-dim)}
+input::placeholder{color:var(--muted)}
 
-        /* Beleg Items */
-        .beleg-item{background:white;border:2px solid #f0f0f0;border-radius:12px;padding:15px;margin-bottom:12px;transition:border-color .3s}
-        .beleg-item:hover{border-color:#ddd}
-        .beleg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-        .beleg-badge{display:inline-block;padding:5px 12px;border-radius:15px;font-size:.85em;font-weight:600;color:white}
-        .badge-50{background:var(--warning)}
-        .badge-70{background:var(--pink)}
-        .badge-80{background:var(--success)}
-        .beleg-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
-        .detail-item{background:#f8f9ff;padding:10px;border-radius:6px}
-        .detail-label{font-size:.8em;color:#666;margin-bottom:4px}
-        .detail-value{font-weight:600;color:#333;font-size:1em}
-        .delete-btn{background:var(--danger);color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:.85em}
+.datum-row{display:flex;gap:8px}
+.datum-row input{flex:1}
+.heute-btn{background:var(--heute-bg);color:var(--heute-color);border:1.5px solid var(--heute-border);border-radius:12px;padding:0 14px;font-weight:700;font-size:.83em;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:var(--body-font)}
+.heute-btn:active{background:var(--heute-color);color:var(--surface)}
 
-        /* Checkboxen */
-        .status-checks{display:flex;gap:15px;margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;flex-wrap:wrap}
-        .check-label{display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;border-radius:8px;border:2px solid #e0e0e0;background:white;font-size:.9em;font-weight:500;color:#666;transition:all .2s;flex:1;min-width:140px;justify-content:center}
-        .check-label input[type=checkbox]{display:none}
-        .check-label.checked-beihilfe{border-color:var(--success);background:#e8f5e9;color:var(--success)}
-        .check-label.checked-pkv{border-color:var(--primary);background:#f0f4ff;color:var(--primary)}
-        .check-icon{font-size:1.1em}
+.satz-group{display:flex;gap:8px}
+.satz-btn{flex:1;padding:13px 4px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--muted);font-family:var(--body-font);font-weight:700;font-size:1.08em;cursor:pointer;transition:all .2s;text-align:center}
+.satz-btn .satz-sub{display:block;font-size:.6em;font-weight:500;margin-top:3px;opacity:.7}
+.satz-btn.s50{border-color:var(--satz50-border);background:var(--satz50-bg);color:var(--satz50-color)}
+.satz-btn.s70{border-color:var(--satz70-border);background:var(--satz70-bg);color:var(--satz70-color)}
+.satz-btn.s80{border-color:var(--satz80-border);background:var(--satz80-bg);color:var(--satz80-color)}
 
-        /* Kein Inhalt */
-        .no-belege{text-align:center;color:#999;padding:30px}
+.calc-box{background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:15px;margin-top:14px;display:none;transition:all .3s}
+.calc-box.show{display:block}
+.calc-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:.9em}
+.calc-row:last-child{border:none;font-weight:700;font-size:.95em}
+.calc-row span:first-child{color:var(--muted)}
 
-        /* Bottom Navigation */
-        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e0e0e0;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,.1);z-index:1000}
-        .nav-item{flex:1;text-align:center;padding:8px;cursor:pointer;color:#666;font-size:.85em;transition:color .2s}
-        .nav-item.active{color:var(--primary)}
-        .nav-item .icon{font-size:1.5em;display:block;margin-bottom:4px}
+.save-btn{width:100%;padding:15px;border:none;border-radius:14px;margin-top:12px;background:var(--save-bg);color:var(--surface);font-family:var(--body-font);font-weight:700;font-size:1em;cursor:pointer;transition:all .15s;box-shadow:0 4px 20px var(--save-shadow)}
+[data-theme="dark"] .save-btn{color:#0f1117}
+.save-btn:active{transform:scale(.98);box-shadow:none}
+.save-btn:disabled{opacity:.5;cursor:not-allowed}
 
-        /* Zurück Button */
-        .back-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.2);color:white;border:none;padding:10px 16px;border-radius:10px;font-size:.95em;font-weight:600;cursor:pointer;margin-bottom:15px;backdrop-filter:blur(5px);transition:background .2s}
-        .back-btn:active{background:rgba(255,255,255,.3)}
+.beleg-item{border:1.5px solid var(--border);border-radius:16px;padding:15px;margin-bottom:10px;background:var(--surface);transition:all .3s}
+.beleg-item:hover{border-color:var(--accent-dim)}
+.beleg-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.beleg-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.78em;font-weight:700}
+.badge-50{background:var(--badge50-bg);color:var(--badge50-color)}
+.badge-70{background:var(--badge70-bg);color:var(--badge70-color)}
+.badge-80{background:var(--badge80-bg);color:var(--badge80-color)}
+.beleg-desc{font-size:.88em;color:var(--text);font-weight:600;margin-top:5px}
+.beleg-date{font-size:.76em;color:var(--muted);margin-top:3px}
+.del-btn{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.2);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.82em;font-weight:600;font-family:var(--body-font)}
 
-        /* Sections */
-        .section{display:none}
-        .section.active{display:block}
+.beleg-amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.amt-item{background:var(--surface2);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)}
+.amt-lbl{font-size:.7em;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.amt-val{font-family:var(--logo-font);font-size:.92em;font-weight:800;color:var(--text)}
+[data-theme="dark"] .amt-val{font-weight:400}
+.amt-val.av-accent{color:var(--stat1-color)}
+.amt-val.av-green{color:var(--green)}
+.amt-val.av-blue{color:var(--blue)}
 
-        /* Spinner */
-        .spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
-        @keyframes spin{to{transform:rotate(360deg)}}
-    </style>
+.status-row{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1.5px solid var(--border)}
+.check-toggle{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:.8em;font-weight:600;cursor:pointer;transition:all .2s;color:var(--muted);font-family:var(--body-font)}
+.check-toggle.on-b{background:var(--check-beihilfe-bg);border-color:var(--check-beihilfe-border);color:var(--check-beihilfe-color)}
+.check-toggle.on-p{background:var(--check-pkv-bg);border-color:var(--check-pkv-border);color:var(--check-pkv-color)}
+
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--back-bg);color:var(--back-color);border:1px solid var(--border);padding:10px 16px;border-radius:12px;font-weight:600;font-size:.88em;cursor:pointer;margin-bottom:14px;transition:all .2s;box-shadow:var(--shadow);backdrop-filter:blur(8px);font-family:var(--body-font)}
+.back-btn:active{border-color:var(--accent)}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1.5px solid var(--border);display:flex;padding:8px 0 14px;box-shadow:0 -4px 20px rgba(0,0,0,.07);z-index:100;transition:background .3s,border-color .3s}
+.nav-tab{flex:1;text-align:center;padding:6px;cursor:pointer;color:var(--muted);transition:color .2s}
+.nav-tab.active{color:var(--nav-active)}
+.nav-tab .ni{font-size:1.35em;display:block;margin-bottom:2px}
+.nav-tab .nl{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.section{display:none}.section.active{display:block}
+.no-belege{text-align:center;color:var(--muted);padding:30px;font-size:.92em}
+.spinner{display:inline-block;width:15px;height:15px;border:2.5px solid rgba(0,0,0,.15);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+[data-theme="dark"] .spinner{border:2.5px solid rgba(255,255,255,.15);border-top-color:currentColor}
+@keyframes spin{to{transform:rotate(360deg)}}
+.file-name{color:var(--accent-dim);font-weight:600;font-size:.87em;margin-bottom:6px}
+</style>
 </head>
 <body>
-<div class="container">
 
-    <!-- Firebase Setup Banner -->
-    <div id="setupBanner" class="show">
-        <h3>⚙️ Einmalige Einrichtung: Firebase Datenbank</h3>
-        <p>Fügen Sie Ihre Firebase-URL ein, um Cloud-Synchronisation zwischen allen Geräten zu aktivieren.</p>
-        <input type="text" id="firebaseUrl" placeholder="https://beihilfe-app-default-rtdb.europe-west1.firebasedatabase.app">
-        <button class="setup-btn" onclick="saveConfig()">✅ Verbindung herstellen & speichern</button>
-        <p style="margin-top:10px"><a href="#" id="helpLink" style="color:#856404;font-weight:600;">❓ Wie erhalte ich die Firebase-URL? (Anleitung anzeigen)</a></p>
-        <div id="setupHelp" style="display:none" class="help-box">
-            <b>So richten Sie Firebase ein (ca. 5 Minuten, kostenlos):</b>
-            <ol>
-                <li>Öffnen Sie <a href="https://console.firebase.google.com" target="_blank" style="color:#856404;font-weight:bold;">console.firebase.google.com</a></li>
-                <li>Klicken Sie auf <b>„Projekt hinzufügen"</b></li>
-                <li>Projektname: <b>beihilfe-app</b> → Weiter → Fertig</li>
-                <li>Links: <b>„Realtime Database"</b> → <b>„Datenbank erstellen"</b></li>
-                <li>Region: <b>europe-west1</b> → <b>„Im Testmodus starten"</b> → Fertig</li>
-                <li>URL oben kopieren (endet auf <i>.firebasedatabase.app</i>)</li>
-                <li>Hier oben einfügen → <b>„Verbindung herstellen"</b></li>
-            </ol>
-        </div>
-    </div>
-
-    <!-- Header -->
-    <div class="header">
-        <h1>✅ BeihilfeCheck</h1>
-        <div class="sync-status" id="syncStatus">
-            <span id="syncIcon">☁️</span>
-            <span id="syncText">Nicht verbunden</span>
-        </div>
-    </div>
-
-    <!-- Übersicht Sektion -->
-    <div id="statsSection" class="section active">
-        <div class="stats">
-            <div class="stat-card"><div class="stat-label">Gesamtbetrag</div><div class="stat-value" id="totalAmount">0,00 €</div></div>
-            <div class="stat-card"><div class="stat-label">Beihilfe übernimmt</div><div class="stat-value" id="totalBeihilfe">0,00 €</div></div>
-            <div class="stat-card"><div class="stat-label">PKV übernimmt</div><div class="stat-value" id="totalPKV">0,00 €</div></div>
-        </div>
-        <div class="card">
-            <h2 style="margin-bottom:15px;color:#333;font-size:1.3em">📋 Ihre Belege</h2>
-            <div id="belegeListe"><div class="no-belege">Noch keine Belege erfasst</div></div>
-        </div>
-    </div>
-
-    <!-- Neuer Beleg Sektion -->
-    <div id="newBelegSection" class="section">
-        <!-- Zurück Button -->
-        <button class="back-btn" onclick="showSection('statsSection')">
-            ← Zurück zur Übersicht
-        </button>
-        <div class="card">
-            <h2 style="margin-bottom:15px;color:#333;font-size:1.3em">📄 Neuer Beleg</h2>
-
-            <!-- Upload -->
-            <div class="upload-section" id="uploadSection">
-                <div class="upload-icon">📎</div>
-                <p style="font-size:1.1em;color:var(--primary);font-weight:600">Beleg hochladen oder fotografieren</p>
-                <p style="color:#999;margin-top:8px;font-size:.9em">Antippen zum Auswählen</p>
-                <input type="file" id="fileInput" accept="image/*,.pdf" capture="environment">
-            </div>
-            <div id="uploadedFileName" style="color:var(--primary);font-weight:600;font-size:.9em;margin-bottom:5px"></div>
-            <img id="previewImage" class="preview-image" style="display:none">
-
-            <form id="belegForm">
-
-                <!-- Beihilfesatz als Buttons -->
-                <div class="form-group">
-                    <label>Beihilfesatz *</label>
-                    <div class="satz-buttons">
-                        <button type="button" class="satz-btn" data-satz="50" onclick="selectSatz(50)">50%</button>
-                        <button type="button" class="satz-btn" data-satz="70" onclick="selectSatz(70)">70%</button>
-                        <button type="button" class="satz-btn" data-satz="80" onclick="selectSatz(80)">80%</button>
-                    </div>
-                    <input type="hidden" id="beihilfeSatz" value="">
-                </div>
-
-                <!-- Betrag -->
-                <div class="form-group">
-                    <label for="betrag">Rechnungsbetrag (€) *</label>
-                    <input type="number" id="betrag" step="0.01" min="0" required placeholder="0,00">
-                </div>
-
-                <!-- Datum + Heute Button -->
-                <div class="form-group">
-                    <label for="datum">Rechnungsdatum *</label>
-                    <div class="datum-row">
-                        <input type="date" id="datum" required>
-                        <button type="button" class="heute-btn" onclick="setHeute()">📅 Heute</button>
-                    </div>
-                </div>
-
-                <!-- Beschreibung -->
-                <div class="form-group">
-                    <label for="beschreibung">Beschreibung</label>
-                    <input type="text" id="beschreibung" placeholder="z.B. Zahnarzt, Apotheke...">
-                </div>
-
-                <!-- Live-Berechnung -->
-                <div class="calculation-result" id="calculationResult">
-                    <div class="result-row"><span>Rechnungsbetrag:</span><span id="resRechnung">0,00 €</span></div>
-                    <div class="result-row"><span>Beihilfe übernimmt:</span><span id="resBeihilfe" style="color:var(--success)">0,00 €</span></div>
-                    <div class="result-row"><span>PKV übernimmt:</span><span id="resPKV" style="color:var(--warning)">0,00 €</span></div>
-                </div>
-
-                <button type="submit" class="btn" id="saveBtn">💾 Beleg speichern</button>
-            </form>
-        </div>
-    </div>
-
+<!-- ══════════════════════════════════════
+     SPLASH SCREEN
+══════════════════════════════════════ -->
+<div id="splashScreen">
+  <svg class="splash-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="24" fill="white" fill-opacity=".2"/>
+    <path d="M50 20 L75 30 L75 52 C75 66 62.5 78 50 84 C37.5 78 25 66 25 52 L25 30 Z" fill="white" opacity=".3"/>
+    <path d="M50 16 L78 28 L78 52 C78 68.5 65.5 82 50 88 C34.5 82 22 68.5 22 52 L22 28 Z" stroke="white" stroke-width="3" fill="none"/>
+    <path d="M38 52 L46 60 L62 44" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="splash-title">BeihilfeCheck</div>
+  <div class="splash-subtitle">Belege verwalten</div>
+  <div class="splash-loader"></div>
 </div>
 
-<!-- Bottom Navigation -->
-<div class="bottom-nav">
-    <div class="nav-item active" id="nav-stats" onclick="showSection('statsSection')">
-        <span class="icon">📊</span><span>Übersicht</span>
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <svg class="login-logo" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="80" height="80" rx="20" fill="url(#lgl)"/>
+      <path d="M40 16 L60 24 L60 42 C60 53 50 62 40 67 C30 62 20 53 20 42 L20 24 Z" fill="white" opacity=".2"/>
+      <path d="M40 13 L63 22 L63 42 C63 54.5 52.5 65 40 70 C27.5 65 17 54.5 17 42 L17 22 Z" stroke="white" stroke-width="2.5" fill="none" opacity=".5"/>
+      <path d="M30 42 L37 49 L50 36" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <defs><linearGradient id="lgl" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse"><stop stop-color="#00c9a7"/><stop offset="1" stop-color="#4facfe"/></linearGradient></defs>
+    </svg>
+    <div class="login-title">BeihilfeCheck</div>
+    <div class="login-subtitle">Melden Sie sich an, um Ihre Belege zu verwalten</div>
+    <button class="google-btn" id="googleLoginBtn">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Mit Google anmelden
+    </button>
+    <div class="login-footer">Sicher & kostenlos</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════ -->
+<div class="container" id="mainApp" style="display:none">
+
+  <button class="theme-toggle" id="themeToggle" title="Design wechseln">🌙</button>
+
+  <div class="app-header">
+    <div class="logo-wrap">
+      <svg class="logo-svg" id="logoLight" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="52" height="52" rx="14" fill="url(#lg1)"/>
+        <path d="M26 10 L38 15 L38 26 C38 33 32 39 26 42 C20 39 14 33 14 26 L14 15 Z" fill="white" opacity=".15"/>
+        <path d="M26 8 L40 14 L40 26 C40 34.5 33.5 41 26 44 C18.5 41 12 34.5 12 26 L12 14 Z" stroke="white" stroke-width="2" fill="none" opacity=".5"/>
+        <path d="M20 26 L24 30 L32 22" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs><linearGradient id="lg1" x1="0" y1="0" x2="52" y2="52" gradientUnits="userSpaceOnUse"><stop stop-color="#00c9a7"/><stop offset="1" stop-color="#4facfe"/></linearGradient></defs>
+      </svg>
+      <svg class="logo-svg" id="logoDark" style="display:none" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="52" height="52" rx="14" fill="#1a1d27"/>
+        <rect x=".5" y=".5" width="51" height="51" rx="13.5" stroke="#f0c060" stroke-opacity=".4"/>
+        <path d="M26 10 L38 15 L38 26 C38 33 32 39 26 42 C20 39 14 33 14 26 L14 15 Z" fill="url(#lg2)" opacity=".15"/>
+        <path d="M26 8 L40 14 L40 26 C40 34.5 33.5 41 26 44 C18.5 41 12 34.5 12 26 L12 14 Z" stroke="url(#lg2)" stroke-width="1.5" fill="none"/>
+        <path d="M20 26 L24 30 L32 22" stroke="url(#lg2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs><linearGradient id="lg2" x1="12" y1="8" x2="40" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#f0c060"/><stop offset="1" stop-color="#e8a820"/></linearGradient></defs>
+      </svg>
+      <div class="logo-text">
+        <div class="logo-title">Beihilfe<span>Check</span></div>
+        <div class="logo-sub">Belege verwalten</div>
+      </div>
     </div>
-    <div class="nav-item" id="nav-new" onclick="showSection('newBelegSection')">
-        <span class="icon">➕</span><span>Neu</span>
+    <div class="user-info">
+      <img class="user-avatar" id="userAvatar" src="" alt="">
+      <span id="userName"></span>
     </div>
+    <button class="logout-btn" id="logoutBtn">Abmelden</button>
+  </div>
+
+  <div id="statsSection" class="section active">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-val" id="totalAmount">0 €</div><div class="stat-lbl">Gesamt</div></div>
+      <div class="stat-card"><div class="stat-icon">🏛️</div><div class="stat-val sv2" id="totalBeihilfe">0 €</div><div class="stat-lbl">Beihilfe</div></div>
+      <div class="stat-card"><div class="stat-icon">💊</div><div class="stat-val sv3" id="totalPKV">0 €</div><div class="stat-lbl">PKV</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Ihre Belege</div>
+      <div id="belegeListe"><div class="no-belege">Noch keine Belege.<br>Tippen Sie unten auf ➕</div></div>
+    </div>
+  </div>
+
+  <div id="newBelegSection" class="section">
+    <button class="back-btn" onclick="showSection('statsSection')">← Zurück</button>
+    <div class="card">
+      <div class="card-title">📄 Neuer Beleg</div>
+      <div class="upload-area" id="uploadArea">
+        <div class="u-icon">📎</div>
+        <div class="u-title">Beleg hochladen oder fotografieren</div>
+        <div class="u-hint">Antippen</div>
+        <input type="file" id="fileInput" accept="image/*,.pdf" capture="environment">
+      </div>
+      <div class="file-name" id="uploadedName"></div>
+      <img id="previewImg" class="preview-img" style="display:none">
+      <form id="belegForm">
+        <div class="form-group">
+          <label class="form-label">Beihilfesatz *</label>
+          <div class="satz-group">
+            <button type="button" class="satz-btn" data-s="50" onclick="selectSatz(50)">50%<span class="satz-sub">Standard</span></button>
+            <button type="button" class="satz-btn" data-s="70" onclick="selectSatz(70)">70%<span class="satz-sub">Ehefrau</span></button>
+            <button type="button" class="satz-btn" data-s="80" onclick="selectSatz(80)">80%<span class="satz-sub">Kind</span></button>
+          </div>
+          <input type="hidden" id="satzVal">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rechnungsbetrag (€) *</label>
+          <input type="number" id="betrag" step="0.01" min="0" placeholder="0,00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Datum *</label>
+          <div class="datum-row">
+            <input type="date" id="datum" required>
+            <button type="button" class="heute-btn" onclick="setHeute()">📅 Heute</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Beschreibung</label>
+          <input type="text" id="beschreibung" placeholder="z.B. Zahnarzt, Apotheke...">
+        </div>
+        <div class="calc-box" id="calcBox">
+          <div class="calc-row"><span>Rechnungsbetrag</span><span id="rR" style="color:var(--text)">–</span></div>
+          <div class="calc-row"><span>🏛️ Beihilfe übernimmt</span><span id="rB" style="color:var(--green)">–</span></div>
+          <div class="calc-row"><span>💊 PKV übernimmt</span><span id="rP" style="color:var(--blue)">–</span></div>
+        </div>
+        <button type="submit" class="save-btn" id="saveBtn">💾 Beleg speichern</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <div class="nav-tab active" id="nav-stats" onclick="showSection('statsSection')"><span class="ni">📊</span><span class="nl">Übersicht</span></div>
+  <div class="nav-tab" id="nav-new" onclick="showSection('newBelegSection')"><span class="ni">➕</span><span class="nl">Neu</span></div>
 </div>
 
 <script>
-// ─── Navigation ───────────────────────────────────────────────────────────────
-function showSection(id){
-    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id==='statsSection') document.getElementById('nav-stats').classList.add('active');
-    if(id==='newBelegSection') document.getElementById('nav-new').classList.add('active');
-    window.scrollTo(0,0);
-}
-
-// ─── Firebase ─────────────────────────────────────────────────────────────────
-let db=null;
-
-function saveConfig(){
-    let url=document.getElementById('firebaseUrl').value.trim().replace(/\/+$/,'');
-    if(!url||(!url.includes('firebase')&&!url.includes('firebaseio.com'))){
-        alert('❌ Ungültige URL!\nBitte kopieren Sie die URL direkt aus der Firebase Console.');return;
-    }
-    localStorage.setItem('firebaseUrl',url);
-    initFirebase(url);
-}
-
-function initFirebase(url){
-    try{
-        if(firebase.apps.length){firebase.apps.forEach(a=>a.delete());}
-        const app=firebase.initializeApp({databaseURL:url});
-        db=firebase.database(app);
-        db.ref('.info/connected').on('value',snap=>{
-            if(snap.val()===true){
-                setSyncStatus('synced','✅','Verbunden & synchron');
-                document.getElementById('setupBanner').style.display='none';
-                startSync();
-            } else {
-                setSyncStatus('syncing','🔄','Verbinde...');
-            }
-        });
-    } catch(e){
-        setSyncStatus('error','❌','Verbindungsfehler');
-        alert('Fehler: '+e.message);
-    }
-}
-
-function setSyncStatus(cls,icon,text){
-    document.getElementById('syncStatus').className='sync-status '+cls;
-    document.getElementById('syncIcon').textContent=icon;
-    document.getElementById('syncText').textContent=text;
-}
-
-function startSync(){
-    db.ref('belege').on('value',snap=>{
-        const data=snap.val()||{};
-        const belege=Object.values(data).sort((a,b)=>new Date(b.erstellt)-new Date(a.erstellt));
-        renderBelege(belege);
-        updateStats(belege);
-    });
-}
-
-// ─── Beihilfesatz Buttons ─────────────────────────────────────────────────────
-let selectedSatz=null;
-
-function selectSatz(satz){
-    selectedSatz=satz;
-    document.getElementById('beihilfeSatz').value=satz;
-    document.querySelectorAll('.satz-btn').forEach(btn=>{
-        btn.className='satz-btn';
-        if(parseInt(btn.dataset.satz)===satz) btn.classList.add('active-'+satz);
-    });
-    calc();
-}
-
-// ─── Datum: Heute Button ──────────────────────────────────────────────────────
-function setHeute(){
-    const today=new Date();
-    const y=today.getFullYear();
-    const m=String(today.getMonth()+1).padStart(2,'0');
-    const d=String(today.getDate()).padStart(2,'0');
-    document.getElementById('datum').value=`${y}-${m}-${d}`;
-}
-
-// ─── Upload ───────────────────────────────────────────────────────────────────
-let imgBase64=null,fileName=null;
-document.getElementById('uploadSection').addEventListener('click',()=>document.getElementById('fileInput').click());
-document.getElementById('fileInput').addEventListener('change',e=>{
-    const f=e.target.files[0];if(!f)return;
-    fileName=f.name;
-    document.getElementById('uploadedFileName').textContent='📎 '+f.name;
-    if(f.type.startsWith('image/')){
-        const r=new FileReader();
-        r.onload=ev=>{imgBase64=ev.target.result;const img=document.getElementById('previewImage');img.src=ev.target.result;img.style.display='block';};
-        r.readAsDataURL(f);
-    } else {imgBase64=null;document.getElementById('previewImage').style.display='none';}
-});
-
-// ─── Live-Berechnung ──────────────────────────────────────────────────────────
-function calc(){
-    const b=parseFloat(document.getElementById('betrag').value)||0;
-    if(!selectedSatz||b<=0){document.getElementById('calculationResult').classList.remove('show');return;}
-    const pct=selectedSatz/100;
-    document.getElementById('resRechnung').textContent=eur(b);
-    document.getElementById('resBeihilfe').textContent=eur(b*pct);
-    document.getElementById('resPKV').textContent=eur(b*(1-pct));
-    document.getElementById('calculationResult').classList.add('show');
-}
-document.getElementById('betrag').addEventListener('input',calc);
-
-// ─── Formular Speichern ───────────────────────────────────────────────────────
-document.getElementById('belegForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    if(!db){alert('⚠️ Bitte zuerst Firebase einrichten!');return;}
-    if(!selectedSatz){alert('⚠️ Bitte Beihilfesatz auswählen (50%, 70% oder 80%)!');return;}
-    const btn=document.getElementById('saveBtn');
-    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Speichere...';
-    const betrag=parseFloat(document.getElementById('betrag').value);
-    const pct=selectedSatz/100;
-    const id=Date.now().toString();
-    const beleg={
-        id, betrag,
-        beihilfeSatz: selectedSatz,
-        datum: document.getElementById('datum').value,
-        beschreibung: document.getElementById('beschreibung').value,
-        beihilfeBetrag: betrag*pct,
-        pkvBetrag: betrag*(1-pct),
-        dateiname: fileName,
-        image: imgBase64,
-        beihilfeBezahlt: false,
-        pkvBezahlt: false,
-        erstellt: new Date().toISOString()
-    };
-    try{
-        await db.ref('belege/'+id).set(beleg);
-        e.target.reset();
-        document.getElementById('calculationResult').classList.remove('show');
-        document.getElementById('uploadedFileName').textContent='';
-        document.getElementById('previewImage').style.display='none';
-        imgBase64=null;fileName=null;selectedSatz=null;
-        document.querySelectorAll('.satz-btn').forEach(b=>b.className='satz-btn');
-        showSection('statsSection');
-    } catch(err){
-        alert('❌ Fehler beim Speichern: '+err.message);
-    }
-    btn.disabled=false;btn.innerHTML='💾 Beleg speichern';
-});
-
-// ─── Status Checkboxen umschalten ─────────────────────────────────────────────
-window.toggleStatus=async function(id, field, val){
-    if(!db)return;
-    try{
-        await db.ref('belege/'+id+'/'+field).set(val);
-    } catch(e){alert('Fehler: '+e.message);}
+// ══════════════════════════════════════════════════════════════════════════════
+// WICHTIG: FIREBASE CONFIG HIER EINTRAGEN (Siehe SETUP.md)
+// ══════════════════════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBqPgA_mWZBTbQfuZ_l3w9C4ElD6F6rO-Y",
+  authDomain: "beihilfe-app.firebaseapp.com",
+  databaseURL: "https://beihilfe-app-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "beihilfe-app",
+  storageBucket: "beihilfe-app.firebasestorage.app",
+  messagingSenderId: "246546066579",
+  appId: "1:246546066579:web:6ea8d60a15e979c824b166",
+  measurementId: "G-RB47KWVBDV"
 };
 
-// ─── Beleg löschen ────────────────────────────────────────────────────────────
-window.deleteBeleg=async function(id){
-    if(!confirm('Beleg wirklich löschen?'))return;
-    try{await db.ref('belege/'+id).remove();}catch(e){alert('Fehler: '+e.message);}
-};
+// Firebase initialisieren
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+let currentUser = null;
 
-// ─── Belege rendern ───────────────────────────────────────────────────────────
-function renderBelege(belege){
-    const el=document.getElementById('belegeListe');
-    if(!belege.length){el.innerHTML='<div class="no-belege">Noch keine Belege erfasst.<br><br>Tippen Sie unten auf ➕</div>';return;}
-    el.innerHTML=belege.map(b=>`
-        <div class="beleg-item" id="item-${b.id}">
-            <div class="beleg-header">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                    <span class="beleg-badge badge-${b.beihilfeSatz||b.beihilfeProzent}">${b.beihilfeSatz||b.beihilfeProzent}% Beihilfe</span>
-                    ${b.beschreibung?`<span style="color:#666;font-size:.9em">${b.beschreibung}</span>`:''}
-                </div>
-                <button class="delete-btn" onclick="deleteBeleg('${b.id}')">🗑️</button>
-            </div>
-            ${b.dateiname?`<div style="color:#999;font-size:.85em;margin-bottom:8px">📎 ${b.dateiname}</div>`:''}
-            ${b.image?`<img src="${b.image}" class="preview-image" style="display:block;margin-bottom:10px">`:''}
-            <div style="color:#999;font-size:.85em;margin-bottom:10px">📅 ${datFmt(b.datum)}</div>
-            <div class="beleg-details">
-                <div class="detail-item">
-                    <div class="detail-label">Rechnungsbetrag</div>
-                    <div class="detail-value">${eur(b.betrag)}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">Beihilfe (${b.beihilfeSatz||b.beihilfeProzent}%)</div>
-                    <div class="detail-value" style="color:var(--success)">${eur(b.beihilfeBetrag)}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">PKV (${100-(b.beihilfeSatz||b.beihilfeProzent)}%)</div>
-                    <div class="detail-value" style="color:var(--warning)">${eur(b.pkvBetrag)}</div>
-                </div>
-            </div>
-            <!-- Status Checkboxen -->
-            <div class="status-checks">
-                <label class="check-label ${b.beihilfeBezahlt?'checked-beihilfe':''}" id="lbl-beihilfe-${b.id}" onclick="handleCheck('${b.id}','beihilfeBezahlt',${!b.beihilfeBezahlt})">
-                    <span class="check-icon">${b.beihilfeBezahlt?'✅':'⬜'}</span>
-                    Beihilfe bezahlt
-                </label>
-                <label class="check-label ${b.pkvBezahlt?'checked-pkv':''}" id="lbl-pkv-${b.id}" onclick="handleCheck('${b.id}','pkvBezahlt',${!b.pkvBezahlt})">
-                    <span class="check-icon">${b.pkvBezahlt?'✅':'⬜'}</span>
-                    PKV bezahlt
-                </label>
-            </div>
-        </div>`).join('');
+// ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
+setTimeout(() => {
+  document.getElementById('splashScreen').classList.add('hide');
+  setTimeout(() => {
+    document.getElementById('splashScreen').style.display = 'none';
+  }, 500);
+}, 2000);
+
+// ─── THEME TOGGLE ─────────────────────────────────────────────────────────────
+const html = document.documentElement;
+const toggleBtn = document.getElementById('themeToggle');
+const logoLight = document.getElementById('logoLight');
+const logoDark = document.getElementById('logoDark');
+
+function applyTheme(theme) {
+  html.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  if (theme === 'dark') {
+    toggleBtn.textContent = '☀️';
+    logoLight.style.display = 'none';
+    logoDark.style.display = 'block';
+  } else {
+    toggleBtn.textContent = '🌙';
+    logoLight.style.display = 'block';
+    logoDark.style.display = 'none';
+  }
 }
-
-window.handleCheck=function(id,field,newVal){
-    toggleStatus(id,field,newVal);
-};
-
-// ─── Statistiken ──────────────────────────────────────────────────────────────
-function updateStats(belege){
-    document.getElementById('totalAmount').textContent=eur(belege.reduce((s,b)=>s+b.betrag,0));
-    document.getElementById('totalBeihilfe').textContent=eur(belege.reduce((s,b)=>s+b.beihilfeBetrag,0));
-    document.getElementById('totalPKV').textContent=eur(belege.reduce((s,b)=>s+b.pkvBetrag,0));
-}
-
-// ─── Hilfsfunktionen ──────────────────────────────────────────────────────────
-function eur(v){return new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(v);}
-function datFmt(d){return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
-
-// ─── Help Toggle ──────────────────────────────────────────────────────────────
-document.getElementById('helpLink').addEventListener('click',e=>{
-    e.preventDefault();
-    const h=document.getElementById('setupHelp');
-    h.style.display=h.style.display==='none'?'block':'none';
+const savedTheme = localStorage.getItem('theme') || 'light';
+applyTheme(savedTheme);
+toggleBtn.addEventListener('click', () => {
+  applyTheme(html.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
 });
 
-// ─── Auto-Connect ─────────────────────────────────────────────────────────────
-const saved=localStorage.getItem('firebaseUrl');
-if(saved){document.getElementById('firebaseUrl').value=saved;initFirebase(saved);}
+// ─── AUTH STATE ───────────────────────────────────────────────────────────────
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('bottomNav').style.display = 'flex';
+    document.getElementById('userName').textContent = user.displayName || user.email;
+    document.getElementById('userAvatar').src = user.photoURL || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300c9a7"/><text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="40" fill="white" font-family="sans-serif">👤</text></svg>';
+    startSync();
+  } else {
+    document.getElementById('loginScreen').classList.add('show');
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('bottomNav').style.display = 'none';
+  }
+});
+
+// ─── GOOGLE LOGIN ─────────────────────────────────────────────────────────────
+document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  } catch (error) {
+    alert('Login fehlgeschlagen: ' + error.message);
+  }
+});
+
+// ─── LOGOUT ───────────────────────────────────────────────────────────────────
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  if (confirm('Wirklich abmelden?')) {
+    auth.signOut();
+  }
+});
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('nav-stats').classList.toggle('active', id === 'statsSection');
+  document.getElementById('nav-new').classList.toggle('active', id === 'newBelegSection');
+  window.scrollTo(0, 0);
+}
+
+// ─── SYNC ─────────────────────────────────────────────────────────────────────
+function startSync() {
+  if (!currentUser) return;
+  db.ref('users/' + currentUser.uid + '/belege').on('value', snap => {
+    const d = snap.val() || {};
+    const b = Object.values(d).sort((a, b) => new Date(b.erstellt) - new Date(a.erstellt));
+    render(b); stats(b);
+  });
+}
+
+// ─── UPLOAD ───────────────────────────────────────────────────────────────────
+let imgB64 = null, fName = null;
+document.getElementById('uploadArea').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return; fName = f.name;
+  document.getElementById('uploadedName').textContent = '📎 ' + f.name;
+  if (f.type.startsWith('image/')) {
+    const r = new FileReader();
+    r.onload = ev => { imgB64 = ev.target.result; const img = document.getElementById('previewImg'); img.src = ev.target.result; img.style.display = 'block'; };
+    r.readAsDataURL(f);
+  } else { imgB64 = null; document.getElementById('previewImg').style.display = 'none'; }
+});
+
+// ─── BEIHILFESATZ ─────────────────────────────────────────────────────────────
+let selSatz = null;
+function selectSatz(s) {
+  selSatz = s; document.getElementById('satzVal').value = s;
+  document.querySelectorAll('.satz-btn').forEach(b => { b.className = 'satz-btn'; if (parseInt(b.dataset.s) === s) b.classList.add('s' + s); });
+  calc();
+}
+
+// ─── HEUTE ────────────────────────────────────────────────────────────────────
+function setHeute() { document.getElementById('datum').value = new Date().toISOString().split('T')[0]; }
+
+// ─── BERECHNUNG ───────────────────────────────────────────────────────────────
+function calc() {
+  const b = parseFloat(document.getElementById('betrag').value) || 0;
+  if (!selSatz || b <= 0) { document.getElementById('calcBox').classList.remove('show'); return; }
+  const p = selSatz / 100;
+  document.getElementById('rR').textContent = eur(b);
+  document.getElementById('rB').textContent = eur(b * p);
+  document.getElementById('rP').textContent = eur(b * (1 - p));
+  document.getElementById('calcBox').classList.add('show');
+}
+document.getElementById('betrag').addEventListener('input', calc);
+
+// ─── SPEICHERN ────────────────────────────────────────────────────────────────
+document.getElementById('belegForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!currentUser) { alert('⚠️ Bitte anmelden!'); return; }
+  if (!selSatz) { alert('⚠️ Beihilfesatz wählen!'); return; }
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Speichere...';
+  const betrag = parseFloat(document.getElementById('betrag').value);
+  const p = selSatz / 100, id = Date.now().toString();
+  const beleg = {
+    id, betrag, beihilfeSatz: selSatz, datum: document.getElementById('datum').value,
+    beschreibung: document.getElementById('beschreibung').value,
+    beihilfeBetrag: betrag * p, pkvBetrag: betrag * (1 - p),
+    dateiname: fName, image: imgB64,
+    beihilfeBezahlt: false, pkvBezahlt: false, erstellt: new Date().toISOString()
+  };
+  try {
+    await db.ref('users/' + currentUser.uid + '/belege/' + id).set(beleg);
+    e.target.reset(); document.getElementById('calcBox').classList.remove('show');
+    document.getElementById('uploadedName').textContent = ''; document.getElementById('previewImg').style.display = 'none';
+    imgB64 = null; fName = null; selSatz = null;
+    document.querySelectorAll('.satz-btn').forEach(b => b.className = 'satz-btn');
+    showSection('statsSection');
+  } catch(err) { alert('❌ ' + err.message); }
+  btn.disabled = false; btn.innerHTML = '💾 Beleg speichern';
+});
+
+// ─── LÖSCHEN / STATUS ─────────────────────────────────────────────────────────
+window.deleteBeleg = async id => {
+  if (!confirm('Löschen?') || !currentUser) return;
+  try { await db.ref('users/' + currentUser.uid + '/belege/' + id).remove(); } catch(e) { alert(e.message); }
+};
+window.toggleStatus = async (id, field, val) => {
+  if (!currentUser) return;
+  try { await db.ref('users/' + currentUser.uid + '/belege/' + id + '/' + field).set(val); } catch(e) {}
+};
+
+// ─── ANZEIGE ──────────────────────────────────────────────────────────────────
+function render(belege) {
+  const el = document.getElementById('belegeListe');
+  if (!belege.length) { el.innerHTML = '<div class="no-belege">Noch keine Belege.<br>Tippen Sie unten auf ➕</div>'; return; }
+  el.innerHTML = belege.map(b => `
+    <div class="beleg-item">
+      <div class="beleg-top">
+        <div>
+          <span class="beleg-badge badge-${b.beihilfeSatz}">${b.beihilfeSatz}% Beihilfe</span>
+          ${b.beschreibung ? `<div class="beleg-desc">${b.beschreibung}</div>` : ''}
+          <div class="beleg-date">📅 ${datFmt(b.datum)}</div>
+        </div>
+        <button class="del-btn" onclick="deleteBeleg('${b.id}')">🗑️</button>
+      </div>
+      ${b.image ? `<img src="${b.image}" class="preview-img" style="display:block">` : ''}
+      <div class="beleg-amounts">
+        <div class="amt-item"><div class="amt-lbl">Rechnung</div><div class="amt-val av-accent">${eur(b.betrag)}</div></div>
+        <div class="amt-item"><div class="amt-lbl">Beihilfe</div><div class="amt-val av-green">${eur(b.beihilfeBetrag)}</div></div>
+        <div class="amt-item"><div class="amt-lbl">PKV</div><div class="amt-val av-blue">${eur(b.pkvBetrag)}</div></div>
+      </div>
+      <div class="status-row">
+        <div class="check-toggle ${b.beihilfeBezahlt ? 'on-b' : ''}" onclick="toggleStatus('${b.id}','beihilfeBezahlt',${!b.beihilfeBezahlt})">${b.beihilfeBezahlt ? '✅' : '⬜'} Beihilfe bezahlt</div>
+        <div class="check-toggle ${b.pkvBezahlt ? 'on-p' : ''}" onclick="toggleStatus('${b.id}','pkvBezahlt',${!b.pkvBezahlt})">${b.pkvBezahlt ? '✅' : '⬜'} PKV bezahlt</div>
+      </div>
+    </div>`).join('');
+}
+function stats(b) {
+  document.getElementById('totalAmount').textContent = eur(b.reduce((s, x) => s + x.betrag, 0));
+  document.getElementById('totalBeihilfe').textContent = eur(b.reduce((s, x) => s + x.beihilfeBetrag, 0));
+  document.getElementById('totalPKV').textContent = eur(b.reduce((s, x) => s + x.pkvBetrag, 0));
+}
+function eur(v) { return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v); }
+function datFmt(d) { return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
 </script>
 </body>
 </html>
