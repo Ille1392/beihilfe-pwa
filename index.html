@@ -548,10 +548,16 @@ async function processOCR(files) {
       
       // Namen finden
       const foundPerson = findPerson(text);
+      // Betrag finden
+      const foundBetrag = findBetrag(text);
+      // Aussteller finden
+      const foundAussteller = findAussteller(text);
       results.push({
         file,
         text,
         person: foundPerson,
+        betrag: foundBetrag,
+        aussteller: foundAussteller,
         index: i
       });
     } catch (err) {
@@ -595,8 +601,125 @@ function findPerson(text) {
   return null;
 }
 
+function findBetrag(text) {
+  // Regex für Geldbeträge: 45,00 oder 45.00 oder 45,00€ oder EUR 45,00 etc.
+  const betragPatterns = [
+    /(?:gesamt|summe|total|betrag|zu zahlen|endbetrag)[\s:]*€?\s*([\d]+[.,][\d]{2})/i,
+    /(?:gesamt|summe|total|betrag|zu zahlen|endbetrag)[\s:]*\s*([\d]+[.,][\d]{2})\s*€/i,
+    /([\d]+[.,][\d]{2})\s*€/g,
+    /€\s*([\d]+[.,][\d]{2})/g,
+    /EUR\s*([\d]+[.,][\d]{2})/gi,
+    /([\d]+[.,][\d]{2})\s*EUR/gi
+  ];
+  
+  const betraege = [];
+  
+  // Keywords die auf Endbetrag hindeuten
+  const endKeywords = ['gesamt', 'summe', 'total', 'zu zahlen', 'endbetrag', 'rechnungsbetrag'];
+  
+  for (const pattern of betragPatterns) {
+    let matches;
+    if (pattern.global) {
+      matches = [...text.matchAll(pattern)];
+      matches.forEach(match => {
+        const betrag = parseFloat(match[1].replace(',', '.'));
+        if (betrag > 0 && betrag < 100000) {
+          // Prüfen ob Keyword in der Nähe
+          const pos = match.index;
+          const context = text.substring(Math.max(0, pos - 50), pos).toLowerCase();
+          const hasKeyword = endKeywords.some(kw => context.includes(kw));
+          betraege.push({ betrag, hasKeyword, pos });
+        }
+      });
+    } else {
+      const match = text.match(pattern);
+      if (match) {
+        const betrag = parseFloat(match[1].replace(',', '.'));
+        if (betrag > 0 && betrag < 100000) {
+          betraege.push({ betrag, hasKeyword: true, pos: match.index });
+        }
+      }
+    }
+  }
+  
+  if (betraege.length === 0) return null;
+  
+  // Bevorzuge Beträge mit Keywords, sonst den größten Betrag
+  const mitKeyword = betraege.filter(b => b.hasKeyword);
+  if (mitKeyword.length > 0) {
+    // Nimm den ersten mit Keyword (meist der Endbetrag)
+    return mitKeyword[0].betrag;
+  }
+  
+  // Sonst nimm den größten gefundenen Betrag
+  return betraege.sort((a, b) => b.betrag - a.betrag)[0].betrag;
+}
+
+function findAussteller(text) {
+  // Zeilen aufsplitten
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  
+  // Keywords die auf Rechnungsaussteller hindeuten
+  const ausstellerKeywords = [
+    'praxis', 'arzt', 'ärztin', 'zahnarzt', 'zahnärztin', 'dr.', 'dr ', 
+    'apotheke', 'krankenhaus', 'klinik', 'klinikum',
+    'physiotherapie', 'ergotherapie', 'logopädie',
+    'labor', 'laboratorium', 'institut',
+    'therapie', 'zentrum', 'mvz', 'gesundheitszentrum',
+    'facharzt', 'fachärztin', 'gemeinschaftspraxis',
+    'med.', 'medizin', 'chirurgie', 'orthopädie',
+    'augenklinik', 'augenarzt', 'hautarzt', 'kinderarzt'
+  ];
+  
+  // Prüfe die ersten 10 Zeilen (Aussteller meist am Anfang)
+  const firstLines = lines.slice(0, 10);
+  
+  for (let i = 0; i < firstLines.length; i++) {
+    const line = firstLines[i].toLowerCase();
+    
+    // Prüfe ob Zeile Keywords enthält
+    const hasKeyword = ausstellerKeywords.some(kw => line.includes(kw));
+    
+    if (hasKeyword) {
+      // Nimm diese Zeile und eventuell die nächste
+      let aussteller = firstLines[i];
+      
+      // Wenn nächste Zeile kurz ist und keine PLZ/Adresse, hinzufügen
+      if (i + 1 < firstLines.length) {
+        const nextLine = firstLines[i + 1];
+        // Prüfe ob es keine Adresszeile ist (keine Zahlen am Anfang, keine PLZ)
+        if (!nextLine.match(/^\d/) && !nextLine.match(/\d{5}/) && nextLine.length < 40) {
+          aussteller += ' ' + nextLine;
+        }
+      }
+      
+      // Bereinige den Aussteller
+      aussteller = aussteller
+        .replace(/rechnung/gi, '')
+        .replace(/invoice/gi, '')
+        .replace(/beleg/gi, '')
+        .trim();
+      
+      // Maximal 60 Zeichen
+      if (aussteller.length > 60) {
+        aussteller = aussteller.substring(0, 60) + '...';
+      }
+      
+      return aussteller;
+    }
+  }
+  
+  // Fallback: Wenn nichts gefunden, nimm die erste nicht-leere Zeile (oft Firmenname)
+  if (lines.length > 0 && lines[0].length > 3 && lines[0].length < 50) {
+    return lines[0];
+  }
+  
+  return null;
+}
+
 function showZuordnung(results) {
   const container = document.getElementById('zuordnungContainer');
+  const heute = new Date().toISOString().split('T')[0];
   
   container.innerHTML = results.map((r, idx) => `
     <div class="zuordnung-card" id="zuordnung-${idx}">
@@ -611,15 +734,18 @@ function showZuordnung(results) {
       </div>
       <div class="form-group">
         <label class="form-label">Betrag (€)</label>
-        <input type="number" step="0.01" min="0" placeholder="0,00" id="betrag-${idx}">
+        ${r.betrag ? `<div class="zuordnung-suggestion">✨ ${r.betrag.toFixed(2).replace('.', ',')} € erkannt</div>` : ''}
+        <input type="number" step="0.01" min="0" placeholder="0,00" id="betrag-${idx}" value="${r.betrag || ''}">
       </div>
       <div class="form-group">
         <label class="form-label">Datum</label>
-        <input type="date" id="datum-${idx}">
+        <div class="zuordnung-suggestion">📅 Heute (${new Date().toLocaleDateString('de-DE')})</div>
+        <input type="date" id="datum-${idx}" value="${heute}">
       </div>
       <div class="form-group">
         <label class="form-label">Beschreibung</label>
-        <input type="text" placeholder="Optional" id="beschreibung-${idx}">
+        ${r.aussteller ? `<div class="zuordnung-suggestion">✨ ${r.aussteller} erkannt</div>` : ''}
+        <input type="text" placeholder="Optional" id="beschreibung-${idx}" value="${r.aussteller || ''}">
       </div>
     </div>
   `).join('');
