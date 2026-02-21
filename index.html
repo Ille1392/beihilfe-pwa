@@ -305,7 +305,7 @@ Mit Google anmelden
 <div class="upload-area" id="uploadArea">
 <div class="u-icon">📎</div>
 <div class="u-title">Rechnungen hochladen oder fotografieren</div>
-<div class="u-hint">Mehrere Dateien gleichzeitig möglich • OCR erkennt Namen automatisch</div>
+<div class="u-hint">Mehrere Dateien gleichzeitig möglich • OCR erkennt automatisch</div>
 <input type="file" id="fileInput" accept="image/*" capture="environment" multiple>
 </div>
 <div id="uploadPreview" class="upload-preview"></div>
@@ -315,12 +315,58 @@ Mit Google anmelden
 </div>
 </div>
 
+<!-- MANUELLER MODUS -->
+<div id="manualSection" class="section">
+<button class="back-btn" onclick="showSection('statsSection')">← Zurück</button>
+<div class="card">
+<div class="card-title">✍️ Beleg manuell erfassen</div>
+<div class="upload-area" id="manualUploadArea">
+<div class="u-icon">📎</div>
+<div class="u-title">Beleg hochladen oder fotografieren</div>
+<div class="u-hint">Einzelne Datei • Keine OCR • Schneller</div>
+<input type="file" id="manualFileInput" accept="image/*,.pdf" capture="environment">
+</div>
+<div id="manualUploadedName" class="file-name"></div>
+<img id="manualPreviewImg" class="preview-img" style="display:none">
+<form id="manualBelegForm">
+<div class="form-group">
+<label class="form-label">Person *</label>
+<select id="manualPerson" required>
+<option value="">-- Bitte wählen --</option>
+</select>
+</div>
+<div class="form-group">
+<label class="form-label">Rechnungsbetrag (€) *</label>
+<input type="number" id="manualBetrag" step="0.01" min="0" placeholder="0,00" required>
+</div>
+<div class="form-group">
+<label class="form-label">Datum *</label>
+<div class="datum-row">
+<input type="date" id="manualDatum" required>
+<button type="button" class="heute-btn" onclick="setManualHeute()">📅 Heute</button>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Beschreibung</label>
+<input type="text" id="manualBeschreibung" placeholder="z.B. Zahnarzt, Apotheke...">
+</div>
+<div class="calc-box" id="manualCalcBox">
+<div class="calc-row"><span>Rechnungsbetrag</span><span id="manualRR" style="color:var(--text)">–</span></div>
+<div class="calc-row"><span>🏛️ Beihilfe übernimmt</span><span id="manualRB" style="color:var(--green)">–</span></div>
+<div class="calc-row"><span>💊 PKV übernimmt</span><span id="manualRP" style="color:var(--blue)">–</span></div>
+</div>
+<button type="submit" class="save-btn" id="manualSaveBtn">💾 Beleg speichern</button>
+</form>
+</div>
+</div>
+
 </div>
 
 <div class="bottom-nav" id="bottomNav" style="display:none">
 <div class="nav-tab active" id="nav-stats" onclick="showSection('statsSection')"><span class="ni">📊</span><span class="nl">Übersicht</span></div>
 <div class="nav-tab" id="nav-personen" onclick="showSection('personenSection')"><span class="ni">👥</span><span class="nl">Personen</span></div>
-<div class="nav-tab" id="nav-new" onclick="showSection('newBelegSection')"><span class="ni">➕</span><span class="nl">Neu</span></div>
+<div class="nav-tab" id="nav-new" onclick="showSection('newBelegSection')"><span class="ni">🤖</span><span class="nl">OCR</span></div>
+<div class="nav-tab" id="nav-manual" onclick="showSection('manualSection')"><span class="ni">✍️</span><span class="nl">Manuell</span></div>
 </div>
 
 <script>
@@ -411,7 +457,13 @@ function showSection(id) {
   document.getElementById('nav-stats').classList.toggle('active', id === 'statsSection');
   document.getElementById('nav-personen').classList.toggle('active', id === 'personenSection');
   document.getElementById('nav-new').classList.toggle('active', id === 'newBelegSection');
+  document.getElementById('nav-manual').classList.toggle('active', id === 'manualSection');
   window.scrollTo(0, 0);
+  
+  // Personen-Dropdown aktualisieren wenn manuelle Sektion geöffnet wird
+  if (id === 'manualSection') {
+    updateManualPersonenDropdown();
+  }
 }
 
 // SYNC BELEGE
@@ -521,18 +573,24 @@ function removeUpload(idx) {
 async function processOCR(files) {
   const progressEl = document.getElementById('ocrProgress');
   progressEl.style.display = 'block';
-  progressEl.innerHTML = '<div style="text-align:center;padding:10px;color:var(--accent)">🔄 Starte OCR...</div>';
+  progressEl.innerHTML = '<div style="text-align:center;padding:10px;color:var(--accent)">🔄 Starte OCR mit Bildoptimierung...</div>';
   
   const results = [];
   
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     progressEl.innerHTML += `<div class="ocr-item" id="ocr-${i}">
-      <div class="ocr-status processing">🔄 Scanne Rechnung ${i + 1}/${files.length}...</div>
+      <div class="ocr-status processing">🔄 Optimiere Bild ${i + 1}/${files.length}...</div>
     </div>`;
     
     try {
-      const { data: { text } } = await Tesseract.recognize(file, 'deu', {
+      // Bild vorverarbeiten für bessere OCR
+      const processedImage = await preprocessImage(file);
+      
+      document.getElementById(`ocr-${i}`).querySelector('.ocr-status').textContent = 
+        `🔄 Scanne Rechnung ${i + 1}/${files.length}...`;
+      
+      const { data: { text } } = await Tesseract.recognize(processedImage, 'deu', {
         logger: m => {
           if (m.status === 'recognizing text') {
             const pct = Math.round(m.progress * 100);
@@ -568,6 +626,74 @@ async function processOCR(files) {
   
   // Zuordnung anzeigen
   showZuordnung(results);
+}
+
+// Bildvorverarbeitung für bessere OCR-Erkennung
+async function preprocessImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      img.onload = () => {
+        // Canvas erstellen
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Größe erhöhen für bessere Erkennung (aber nicht zu groß)
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 2000;
+        
+        if (width > maxSize || height > maxSize) {
+          const ratio = Math.min(maxSize / width, maxSize / height);
+          width = width * ratio;
+          height = height * ratio;
+        } else if (width < 1000) {
+          // Zu kleine Bilder hochskalieren
+          const ratio = 1000 / width;
+          width = width * ratio;
+          height = height * ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Bild zeichnen
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Bildverbesserungen anwenden
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        
+        // 1. Kontrast erhöhen + Graustufen
+        for (let i = 0; i < data.length; i += 4) {
+          // Graustufen
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          
+          // Kontrast erhöhen (Threshold)
+          const threshold = 128;
+          const factor = 1.5;
+          let value = (gray - threshold) * factor + threshold;
+          value = Math.max(0, Math.min(255, value));
+          
+          data[i] = value;     // R
+          data[i + 1] = value; // G
+          data[i + 2] = value; // B
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Als Blob zurückgeben
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/png');
+      };
+      img.src = e.target.result;
+    };
+    
+    reader.readAsDataURL(file);
+  });
 }
 
 function findPerson(text) {
@@ -878,6 +1004,120 @@ function eur(v) {
 function datFmt(d) {
   return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MANUELLER MODUS
+// ══════════════════════════════════════════════════════════════════════════════
+
+let manualImgB64 = null, manualFileName = null;
+
+function updateManualPersonenDropdown() {
+  const select = document.getElementById('manualPerson');
+  select.innerHTML = '<option value="">-- Bitte wählen --</option>' + 
+    personen.map(p => `<option value="${p.id}">${p.name} (${p.satz}%)</option>`).join('');
+}
+
+document.getElementById('manualUploadArea').addEventListener('click', () => 
+  document.getElementById('manualFileInput').click()
+);
+
+document.getElementById('manualFileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  manualFileName = f.name;
+  document.getElementById('manualUploadedName').textContent = '📎 ' + f.name;
+  if (f.type.startsWith('image/')) {
+    const r = new FileReader();
+    r.onload = ev => {
+      manualImgB64 = ev.target.result;
+      const img = document.getElementById('manualPreviewImg');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+    };
+    r.readAsDataURL(f);
+  } else {
+    manualImgB64 = null;
+    document.getElementById('manualPreviewImg').style.display = 'none';
+  }
+});
+
+function setManualHeute() {
+  document.getElementById('manualDatum').value = new Date().toISOString().split('T')[0];
+}
+
+function calcManual() {
+  const personId = document.getElementById('manualPerson').value;
+  const betrag = parseFloat(document.getElementById('manualBetrag').value) || 0;
+  
+  if (!personId || betrag <= 0) {
+    document.getElementById('manualCalcBox').classList.remove('show');
+    return;
+  }
+  
+  const person = personen.find(p => p.id === personId);
+  if (!person) return;
+  
+  const pct = person.satz / 100;
+  document.getElementById('manualRR').textContent = eur(betrag);
+  document.getElementById('manualRB').textContent = eur(betrag * pct);
+  document.getElementById('manualRP').textContent = eur(betrag * (1 - pct));
+  document.getElementById('manualCalcBox').classList.add('show');
+}
+
+document.getElementById('manualPerson').addEventListener('change', calcManual);
+document.getElementById('manualBetrag').addEventListener('input', calcManual);
+
+document.getElementById('manualBelegForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!currentUser) { alert('⚠️ Bitte anmelden!'); return; }
+  
+  const btn = document.getElementById('manualSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Speichere...';
+  
+  const personId = document.getElementById('manualPerson').value;
+  const betrag = parseFloat(document.getElementById('manualBetrag').value);
+  const datum = document.getElementById('manualDatum').value;
+  const beschreibung = document.getElementById('manualBeschreibung').value;
+  
+  const person = personen.find(p => p.id === personId);
+  const pct = person.satz / 100;
+  const id = Date.now().toString();
+  
+  const beleg = {
+    id,
+    personId: person.id,
+    personName: person.name,
+    beihilfeSatz: person.satz,
+    betrag,
+    datum,
+    beschreibung,
+    beihilfeBetrag: betrag * pct,
+    pkvBetrag: betrag * (1 - pct),
+    dateiname: manualFileName,
+    image: manualImgB64,
+    beihilfeBezahlt: false,
+    pkvBezahlt: false,
+    erstellt: new Date().toISOString()
+  };
+  
+  try {
+    await db.ref('users/' + currentUser.uid + '/belege/' + id).set(beleg);
+    e.target.reset();
+    document.getElementById('manualCalcBox').classList.remove('show');
+    document.getElementById('manualUploadedName').textContent = '';
+    document.getElementById('manualPreviewImg').style.display = 'none';
+    manualImgB64 = null;
+    manualFileName = null;
+    showSection('statsSection');
+    alert('✅ Beleg gespeichert!');
+  } catch (err) {
+    alert('❌ Fehler: ' + err.message);
+  }
+  
+  btn.disabled = false;
+  btn.innerHTML = '💾 Beleg speichern';
+});
 </script>
 </body>
 </html>
