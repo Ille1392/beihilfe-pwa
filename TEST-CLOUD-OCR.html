@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cloud OCR Test</title>
+</head>
+<body>
+<h1>Cloud OCR Test</h1>
+<input type="file" id="testFile" accept="image/*">
+<button onclick="testOCR()">Test OCR</button>
+<div id="result"></div>
+
+<script>
+async function testOCR() {
+  const file = document.getElementById('testFile').files[0];
+  if (!file) {
+    alert('Bitte Datei auswählen');
+    return;
+  }
+  
+  const result = document.getElementById('result');
+  result.innerHTML = 'Teste...';
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('apikey', 'helloworld'); // Öffentlicher Test-Key
+    formData.append('language', 'ger');
+    
+    const response = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
+    result.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    
+    if (data.ParsedResults && data.ParsedResults[0]) {
+      alert('ERFOLG!\n\n' + data.ParsedResults[0].ParsedText);
+    }
+  } catch (err) {
+    result.innerHTML = 'FEHLER: ' + err.message;
+  }
+}
+</script>
+</body>
+</html>
