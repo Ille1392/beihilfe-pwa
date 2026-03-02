@@ -2,10 +2,20 @@
 <html lang="de" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#00c9a7">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#00c9a7" id="themeColorMeta">
 <link rel="manifest" href="manifest.json">
 <title>BeihilfeCheck</title>
+
+<!-- iOS PWA Meta-Tags für App-Feeling -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BeihilfeCheck">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- Verhindert Zoom bei Input-Focus -->
+<meta name="mobile-web-app-capable" content="yes">
+
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600;700&family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -49,6 +59,7 @@
 
 /* BASE */
 body{font-family:var(--body-font);background:var(--bg);color:var(--text);min-height:100vh;padding:12px;padding-bottom:90px;transition:background .3s,color .3s}
+body{padding-top:max(12px, env(safe-area-inset-top));padding-bottom:max(90px, calc(90px + env(safe-area-inset-bottom)));padding-left:max(12px, env(safe-area-inset-left));padding-right:max(12px, env(safe-area-inset-right))}
 .container{max-width:520px;margin:0 auto}
 .theme-toggle{position:fixed;top:14px;right:14px;z-index:999;background:var(--toggle-bg);color:var(--toggle-color);border:none;width:44px;height:44px;border-radius:50%;font-size:1.2em;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.2);transition:all .3s;display:flex;align-items:center;justify-content:center}
 .theme-toggle:active{transform:scale(.9)}
@@ -153,6 +164,7 @@ input::placeholder{color:var(--muted)}
 
 /* NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1.5px solid var(--border);display:flex;padding:8px 0 14px;box-shadow:0 -4px 20px rgba(0,0,0,.07);z-index:100;transition:background .3s,border-color .3s}
+.bottom-nav{padding-bottom:max(14px, calc(14px + env(safe-area-inset-bottom)))}
 .nav-tab{flex:1;text-align:center;padding:6px;cursor:pointer;color:var(--muted);transition:color .2s}
 .nav-tab.active{color:var(--nav-active)}
 .nav-tab .ni{font-size:1.35em;display:block;margin-bottom:2px}
@@ -190,6 +202,17 @@ input::placeholder{color:var(--muted)}
 .zuordnung-betrag{font-weight:700;font-size:1.1em;color:var(--text);margin-bottom:8px}
 .zuordnung-suggestion{background:var(--green-bg);color:var(--green);padding:6px 12px;border-radius:8px;font-size:.85em;display:inline-block;margin-bottom:10px}
 .zuordnung-dropdown{width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:.9em;background:var(--surface)}
+
+/* PWA INSTALL PROMPT */
+.install-prompt{position:fixed;bottom:90px;left:12px;right:12px;background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:16px;box-shadow:0 4px 20px rgba(0,201,167,.3);z-index:99;display:none;animation:slideUp .3s ease-out}
+.install-prompt.show{display:block}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.install-prompt-title{font-weight:700;font-size:.95em;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.install-prompt-text{font-size:.85em;color:var(--muted);margin-bottom:12px}
+.install-prompt-buttons{display:flex;gap:8px}
+.install-btn{flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:.9em;cursor:pointer;font-family:var(--body-font);transition:all .2s}
+.install-btn-yes{background:var(--accent);color:white;border:none}
+.install-btn-no{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -370,6 +393,16 @@ Mit Google anmelden
 
 </div>
 
+<!-- PWA INSTALL PROMPT -->
+<div class="install-prompt" id="installPrompt">
+<div class="install-prompt-title">📱 App installieren</div>
+<div class="install-prompt-text">Installieren Sie BeihilfeCheck als App für schnellen Zugriff – funktioniert wie eine echte App!</div>
+<div class="install-prompt-buttons">
+<button class="install-btn install-btn-yes" id="installYes">Installieren</button>
+<button class="install-btn install-btn-no" id="installNo">Später</button>
+</div>
+</div>
+
 <div class="bottom-nav" id="bottomNav" style="display:none">
 <div class="nav-tab active" id="nav-stats" onclick="showSection('statsSection')"><span class="ni">📊</span><span class="nl">Übersicht</span></div>
 <div class="nav-tab" id="nav-personen" onclick="showSection('personenSection')"><span class="ni">👥</span><span class="nl">Personen</span></div>
@@ -418,21 +451,72 @@ const logoDark = document.getElementById('logoDark');
 function applyTheme(theme) {
   html.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
+  
+  // Theme-Color für Browser-UI anpassen
+  const metaThemeColor = document.getElementById('themeColorMeta');
+  
   if (theme === 'dark') {
     toggleBtn.textContent = '☀️';
     logoLight.style.display = 'none';
     logoDark.style.display = 'block';
+    metaThemeColor.setAttribute('content', '#0f1117'); // Dunkler Hintergrund
   } else {
     toggleBtn.textContent = '🌙';
     logoLight.style.display = 'block';
     logoDark.style.display = 'none';
+    metaThemeColor.setAttribute('content', '#00c9a7'); // Mint Farbe
   }
 }
 const savedTheme = localStorage.getItem('theme') || 'light';
 applyTheme(savedTheme);
 toggleBtn.addEventListener('click', () => applyTheme(html.getAttribute('data-theme') === 'light' ? 'dark' : 'light'));
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// PWA INSTALL PROMPT
+// ═══════════════════════════════════════════════════════════════════════════════
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Verhindere Chrome's Mini-Infobar
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Zeige Install-Prompt nach 3 Sekunden (nur wenn noch nicht installiert)
+  setTimeout(() => {
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+      document.getElementById('installPrompt').classList.add('show');
+    }
+  }, 3000);
+});
+
+document.getElementById('installYes').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  
+  if (outcome === 'accepted') {
+    console.log('App installiert!');
+  }
+  
+  deferredPrompt = null;
+  document.getElementById('installPrompt').classList.remove('show');
+});
+
+document.getElementById('installNo').addEventListener('click', () => {
+  document.getElementById('installPrompt').classList.remove('show');
+  // Merken dass User "Später" geklickt hat
+  localStorage.setItem('installDismissed', Date.now());
+});
+
+// Prüfen ob App bereits installiert ist
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  console.log('App läuft im Standalone-Modus (installiert)');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // AUTH
+// ═══════════════════════════════════════════════════════════════════════════════
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
