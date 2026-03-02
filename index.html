@@ -425,7 +425,6 @@ const firebaseConfig = {
   measurementId: "G-RB47KWVBDV"
 };
 
-
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
@@ -434,8 +433,19 @@ let personen = [];
 let uploadedFiles = [];
 let selectedOcrEngine = 'cloud'; // 'cloud' oder 'local'
 
-// OCR.space API Key (kostenlos, 25.000 requests/Monat)
-const OCR_SPACE_API_KEY = 'K87899142388957'; // Öffentlicher Demo-Key (Sie können Ihren eigenen bei ocr.space erstellen)
+// ══════════════════════════════════════════════════════════════════════════════
+// WICHTIG: EIGENEN OCR.SPACE API-KEY HIER EINTRAGEN!
+// ══════════════════════════════════════════════════════════════════════════════
+// 1. Gehen Sie zu: https://ocr.space/ocrapi
+// 2. Geben Sie Ihre E-Mail ein
+// 3. Klicken Sie "Register"
+// 4. Sie erhalten sofort per E-Mail Ihren API-Key
+// 5. Kopieren Sie den Key und tragen Sie ihn hier ein:
+
+const OCR_SPACE_API_KEY = 'K84336834688957'; // ← Ersetzen Sie diesen Text!
+
+// Beispiel: const OCR_SPACE_API_KEY = 'K12345678901234';
+// ══════════════════════════════════════════════════════════════════════════════
 
 // SPLASH
 setTimeout(() => {
