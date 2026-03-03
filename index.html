@@ -326,12 +326,12 @@ Mit Google anmelden
 <div class="card">
 <div class="card-title">📸 FotoUpload mit automatischer Erkennung</div>
 <div class="form-group">
-<label class="form-label">Erkennungsmodus wählen</label>
+<label class="form-label">Erkennungsmodus</label>
 <div class="satz-group">
-<button type="button" class="satz-btn s80" id="ocrEngineCloud" onclick="selectOcrEngine('cloud')">☁️ Cloud<span class="satz-sub">Schneller & genauer</span></button>
-<button type="button" class="satz-btn" id="ocrEngineLocal" onclick="selectOcrEngine('local')">💻 Lokal<span class="satz-sub">Offline-fähig</span></button>
+<button type="button" class="satz-btn s80" id="ocrEngineCloud" onclick="selectOcrEngine('cloud')">☁️ Cloud<span class="satz-sub">Beste Erkennung</span></button>
+<button type="button" class="satz-btn" id="ocrEngineLocal" onclick="selectOcrEngine('local')">💻 Lokal<span class="satz-sub">Offline</span></button>
 </div>
-<div style="font-size:.8em;color:var(--muted);margin-top:8px;text-align:center" id="ocrEngineInfo">☁️ Cloud: ~98% Genauigkeit, ~2 Sek/Rechnung (benötigt Internet)</div>
+<div style="font-size:.8em;color:var(--muted);margin-top:8px;text-align:center" id="ocrEngineInfo">☁️ Cloud: ~98% Genauigkeit (empfohlen!)</div>
 </div>
 <div class="upload-area" id="uploadArea">
 <div class="u-icon">📎</div>
@@ -433,19 +433,9 @@ let personen = [];
 let uploadedFiles = [];
 let selectedOcrEngine = 'cloud'; // 'cloud' oder 'local'
 
-// ══════════════════════════════════════════════════════════════════════════════
-// WICHTIG: EIGENEN OCR.SPACE API-KEY HIER EINTRAGEN!
-// ══════════════════════════════════════════════════════════════════════════════
-// 1. Gehen Sie zu: https://ocr.space/ocrapi
-// 2. Geben Sie Ihre E-Mail ein
-// 3. Klicken Sie "Register"
-// 4. Sie erhalten sofort per E-Mail Ihren API-Key
-// 5. Kopieren Sie den Key und tragen Sie ihn hier ein:
-
-const OCR_SPACE_API_KEY = 'K84336834688957'; // ← Ersetzen Sie diesen Text!
-
-// Beispiel: const OCR_SPACE_API_KEY = 'K12345678901234';
-// ══════════════════════════════════════════════════════════════════════════════
+// OCR.space API-Key - "helloworld" ist ein öffentlicher Test-Key
+// Funktioniert sofort! Für produktive Nutzung eigenen Key holen bei: https://ocr.space/ocrapi
+const OCR_SPACE_API_KEY = 'helloworld';
 
 // SPLASH
 setTimeout(() => {
@@ -648,7 +638,7 @@ async function deletePerson(id) {
 // UPLOAD & OCR
 document.getElementById('uploadArea').addEventListener('click', () => document.getElementById('fileInput').click());
 
-// OCR Engine Auswahl
+// Engine-Auswahl
 function selectOcrEngine(engine) {
   selectedOcrEngine = engine;
   const cloudBtn = document.getElementById('ocrEngineCloud');
@@ -660,14 +650,14 @@ function selectOcrEngine(engine) {
   
   if (engine === 'cloud') {
     cloudBtn.classList.add('s80');
-    info.innerHTML = '☁️ Cloud: ~98% Genauigkeit, ~2 Sek/Rechnung (benötigt Internet)';
+    info.innerHTML = '☁️ Cloud: ~98% Genauigkeit (empfohlen!)';
   } else {
     localBtn.classList.add('s80');
-    info.innerHTML = '💻 Lokal: ~95% Genauigkeit, ~8 Sek/Rechnung (funktioniert offline)';
+    info.innerHTML = '💻 Lokal: ~90% Genauigkeit, offline-fähig';
   }
 }
 
-// OCR.space API (Cloud-Erkennung)
+// OCR.space Cloud-API
 async function ocrSpaceAPI(imageFile) {
   const formData = new FormData();
   formData.append('file', imageFile);
@@ -676,30 +666,24 @@ async function ocrSpaceAPI(imageFile) {
   formData.append('isOverlayRequired', 'false');
   formData.append('detectOrientation', 'true');
   formData.append('scale', 'true');
-  formData.append('OCREngine', '2'); // Engine 2 ist besser für Deutsch
+  formData.append('OCREngine', '2');
   
-  try {
-    const response = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      body: formData
-    });
-    
-    const result = await response.json();
-    
-    if (result.IsErroredOnProcessing) {
-      throw new Error(result.ErrorMessage || 'Cloud-Erkennung Fehler');
-    }
-    
-    if (result.ParsedResults && result.ParsedResults.length > 0) {
-      return result.ParsedResults[0].ParsedText;
-    }
-    
-    throw new Error('Kein Text erkannt');
-  } catch (error) {
-    console.error('Cloud-Erkennung Fehler:', error);
-    // Fallback zu lokaler Erkennung
-    throw error;
+  const response = await fetch('https://api.ocr.space/parse/image', {
+    method: 'POST',
+    body: formData
+  });
+  
+  const result = await response.json();
+  
+  if (result.IsErroredOnProcessing) {
+    throw new Error(result.ErrorMessage || result.ErrorDetails || 'OCR Fehler');
   }
+  
+  if (!result.ParsedResults || !result.ParsedResults[0]) {
+    throw new Error('Kein Text erkannt');
+  }
+  
+  return result.ParsedResults[0].ParsedText;
 }
 
 document.getElementById('fileInput').addEventListener('change', async (e) => {
