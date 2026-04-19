@@ -163,12 +163,16 @@ input::placeholder{color:var(--muted)}
 .back-btn:active{border-color:var(--accent)}
 
 /* NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1.5px solid var(--border);display:flex;padding:8px 0 14px;box-shadow:0 -4px 20px rgba(0,0,0,.07);z-index:100;transition:background .3s,border-color .3s}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1.5px solid var(--border);display:flex;flex-direction:column;padding:8px 0 14px;box-shadow:0 -4px 20px rgba(0,0,0,.07);z-index:100;transition:background .3s,border-color .3s}
 .bottom-nav{padding-bottom:max(14px, calc(14px + env(safe-area-inset-bottom)))}
+.nav-tabs{display:flex;width:100%}
 .nav-tab{flex:1;text-align:center;padding:6px;cursor:pointer;color:var(--muted);transition:color .2s}
 .nav-tab.active{color:var(--nav-active)}
 .nav-tab .ni{font-size:1.35em;display:block;margin-bottom:2px}
 .nav-tab .nl{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.nav-footer-link{text-align:center;padding:4px 0 0;font-size:.68em;color:var(--muted)}
+.nav-footer-link a{color:var(--muted);text-decoration:none;opacity:.7}
+.nav-footer-link a:hover{opacity:1;color:var(--accent)}
 .section{display:none}.section.active{display:block}
 .no-belege{text-align:center;color:var(--muted);padding:30px;font-size:.92em}
 .spinner{display:inline-block;width:15px;height:15px;border:2.5px solid rgba(0,0,0,.15);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
@@ -404,10 +408,13 @@ Mit Google anmelden
 </div>
 
 <div class="bottom-nav" id="bottomNav" style="display:none">
+<div class="nav-tabs">
 <div class="nav-tab active" id="nav-stats" onclick="showSection('statsSection')"><span class="ni">📊</span><span class="nl">Übersicht</span></div>
 <div class="nav-tab" id="nav-personen" onclick="showSection('personenSection')"><span class="ni">👥</span><span class="nl">Personen</span></div>
 <div class="nav-tab" id="nav-new" onclick="showSection('newBelegSection')"><span class="ni">📸</span><span class="nl">FotoUpload</span></div>
 <div class="nav-tab" id="nav-manual" onclick="showSection('manualSection')"><span class="ni">✍️</span><span class="nl">Manuell</span></div>
+</div>
+<div class="nav-footer-link"><a href="datenschutz.html" target="_blank">🔒 Datenschutzerklärung</a></div>
 </div>
 
 <script>
