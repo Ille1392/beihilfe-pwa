@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Datenschutzerklärung – BeihilfeCheck</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --teal: #00c9a7;
+      --teal-dark: #00a389;
+      --teal-light: #e0faf5;
+      --ink: #1a2e2a;
+      --muted: #5a7a74;
+      --border: #c8eae4;
+      --bg: #f5fefa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    header {
+      background: var(--teal);
+      color: white;
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+
+    header .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    header .logo-icon {
+      width: 44px; height: 44px;
+      background: white;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+
+    header .logo-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      letter-spacing: -0.3px;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(26px, 5vw, 38px);
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      opacity: 0.85;
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    .toc {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 48px;
+    }
+
+    .toc h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      font-weight: 400;
+      margin-bottom: 16px;
+      color: var(--teal-dark);
+    }
+
+    .toc ol {
+      padding-left: 20px;
+    }
+
+    .toc li {
+      margin-bottom: 6px;
+    }
+
+    .toc a {
+      color: var(--teal-dark);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .toc a:hover { text-decoration: underline; }
+
+    section {
+      margin-bottom: 48px;
+      scroll-margin-top: 24px;
+    }
+
+    section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(20px, 3vw, 26px);
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--teal-light);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    section h2 .num {
+      background: var(--teal);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    p { margin-bottom: 14px; color: #2d4a44; }
+    p:last-child { margin-bottom: 0; }
+
+    ul, ol {
+      padding-left: 22px;
+      margin-bottom: 14px;
+    }
+
+    li { margin-bottom: 6px; color: #2d4a44; }
+
+    .highlight-box {
+      background: var(--teal-light);
+      border-left: 4px solid var(--teal);
+      border-radius: 0 12px 12px 0;
+      padding: 18px 22px;
+      margin: 20px 0;
+    }
+
+    .highlight-box p { color: var(--ink); margin: 0; }
+
+    .contact-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+    }
+
+    .contact-card p { margin-bottom: 8px; }
+
+    strong { color: var(--ink); font-weight: 500; }
+
+    a { color: var(--teal-dark); }
+
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      background: white;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    footer a { color: var(--teal-dark); text-decoration: none; }
+
+    @media (max-width: 600px) {
+      .toc, .contact-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧾</div>
+    <span class="logo-text">BeihilfeCheck</span>
+  </div>
+  <h1>Datenschutzerklärung</h1>
+  <p>Zuletzt aktualisiert: April 2026</p>
+</header>
+
+<div class="container">
+
+  <div class="toc">
+    <h2>Inhalt</h2>
+    <ol>
+      <li><a href="#verantwortlicher">Verantwortlicher</a></li>
+      <li><a href="#daten">Welche Daten werden verarbeitet?</a></li>
+      <li><a href="#zweck">Zweck der Datenverarbeitung</a></li>
+      <li><a href="#firebase">Firebase & Google</a></li>
+      <li><a href="#speicherung">Speicherung & Sicherheit</a></li>
+      <li><a href="#rechte">Ihre Rechte</a></li>
+      <li><a href="#loeschung">Datenlöschung</a></li>
+      <li><a href="#kontakt">Kontakt</a></li>
+    </ol>
+  </div>
+
+  <section id="verantwortlicher">
+    <h2><span class="num">1</span> Verantwortlicher</h2>
+    <p>
+      Diese App wird als privates, nicht-kommerzielles Projekt betrieben. Verantwortlich im Sinne der
+      Datenschutz-Grundverordnung (DSGVO) ist der Betreiber dieser Anwendung. Kontaktdaten finden
+      Sie am Ende dieser Erklärung.
+    </p>
+    <div class="highlight-box">
+      <p>BeihilfeCheck ist eine private Anwendung zur Verwaltung von Beihilfebelegen für den persönlichen Gebrauch. Es erfolgt keine kommerzielle Nutzung der gespeicherten Daten.</p>
+    </div>
+  </section>
+
+  <section id="daten">
+    <h2><span class="num">2</span> Welche Daten werden verarbeitet?</h2>
+    <p>BeihilfeCheck verarbeitet ausschließlich Daten, die Sie selbst eingeben oder hochladen:</p>
+    <ul>
+      <li><strong>Anmeldedaten:</strong> E-Mail-Adresse und Name über Google-Login (Firebase Authentication)</li>
+      <li><strong>Beihilfebelege:</strong> Fotos und Scans von Arztrechnungen und medizinischen Belegen</li>
+      <li><strong>Profildaten:</strong> Familienmitglieder mit jeweiligen Beihilfesätzen (z.B. 50%, 70%, 80%)</li>
+      <li><strong>Belegdaten:</strong> Datum, Betrag, Kategorie und Status der Erstattung</li>
+    </ul>
+    <p>Es werden keine Standortdaten, Gerätekennungen oder Nutzungsstatistiken erhoben.</p>
+  </section>
+
+  <section id="zweck">
+    <h2><span class="num">3</span> Zweck der Datenverarbeitung</h2>
+    <p>Die Daten werden ausschließlich für folgende Zwecke verwendet:</p>
+    <ul>
+      <li>Bereitstellung der App-Funktionen (Belege erfassen, verwalten, berechnen)</li>
+      <li>Synchronisation Ihrer Daten zwischen Ihren Geräten</li>
+      <li>Identifizierung Ihres Nutzerkontos für den Datenzugriff</li>
+    </ul>
+    <p>Eine Weitergabe an Dritte zu Werbe- oder Analysezwecken findet <strong>nicht</strong> statt.</p>
+  </section>
+
+  <section id="firebase">
+    <h2><span class="num">4</span> Firebase & Google</h2>
+    <p>
+      BeihilfeCheck nutzt <strong>Google Firebase</strong> für Authentifizierung und Cloud-Speicherung.
+      Firebase ist ein Dienst der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland.
+    </p>
+    <ul>
+      <li><strong>Firebase Authentication:</strong> Verwaltet Ihre Anmeldung via Google-Konto</li>
+      <li><strong>Cloud Firestore:</strong> Speichert Ihre Belegdaten verschlüsselt in der Cloud</li>
+      <li><strong>Firebase Storage:</strong> Speichert hochgeladene Belegfotos</li>
+    </ul>
+    <p>
+      Google verarbeitet dabei Daten gemäß der
+      <a href="https://firebase.google.com/support/privacy" target="_blank">Firebase Datenschutzrichtlinie</a>.
+      Die Daten werden in Rechenzentren innerhalb der EU gespeichert.
+    </p>
+    <div class="highlight-box">
+      <p>Beim Google-Login erhält BeihilfeCheck nur Ihren Namen und Ihre E-Mail-Adresse. Kein Zugriff auf Ihr Google-Konto, Ihre Kontakte oder andere Google-Dienste.</p>
+    </div>
+  </section>
+
+  <section id="speicherung">
+    <h2><span class="num">5</span> Speicherung & Sicherheit</h2>
+    <p>
+      Alle Daten werden verschlüsselt übertragen (HTTPS/TLS) und in der Firebase-Cloud gespeichert.
+      Der Zugriff auf Ihre Daten ist ausschließlich mit Ihrem Google-Konto möglich.
+    </p>
+    <ul>
+      <li>Datentransfer: TLS-verschlüsselt</li>
+      <li>Datenspeicherung: Firebase Cloud (EU-Rechenzentren)</li>
+      <li>Zugriff: Nur durch Sie mit Ihrem Google-Login</li>
+    </ul>
+    <p>
+      Aufgrund der Sensibilität von Gesundheitsdaten empfehlen wir, Ihr Google-Konto mit
+      Zwei-Faktor-Authentifizierung zu schützen.
+    </p>
+  </section>
+
+  <section id="rechte">
+    <h2><span class="num">6</span> Ihre Rechte</h2>
+    <p>Gemäß DSGVO haben Sie folgende Rechte bezüglich Ihrer gespeicherten Daten:</p>
+    <ul>
+      <li><strong>Auskunft (Art. 15 DSGVO):</strong> Sie können jederzeit Auskunft über Ihre gespeicherten Daten anfordern</li>
+      <li><strong>Berichtigung (Art. 16 DSGVO):</strong> Sie können unrichtige Daten korrigieren</li>
+      <li><strong>Löschung (Art. 17 DSGVO):</strong> Sie können die Löschung Ihrer Daten verlangen</li>
+      <li><strong>Einschränkung (Art. 18 DSGVO):</strong> Sie können die Verarbeitung einschränken lassen</li>
+      <li><strong>Widerspruch (Art. 21 DSGVO):</strong> Sie können der Verarbeitung widersprechen</li>
+    </ul>
+    <p>
+      Zur Wahrnehmung Ihrer Rechte wenden Sie sich bitte an die unter Punkt 8 genannte Kontaktadresse.
+      Sie haben außerdem das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren.
+    </p>
+  </section>
+
+  <section id="loeschung">
+    <h2><span class="num">7</span> Datenlöschung</h2>
+    <p>
+      Sie können Ihre Daten jederzeit selbst löschen:
+    </p>
+    <ul>
+      <li><strong>Einzelne Belege:</strong> Direkt in der App löschbar</li>
+      <li><strong>Komplettes Konto:</strong> Kontaktieren Sie uns – wir löschen alle Ihre Daten aus Firebase innerhalb von 30 Tagen</li>
+      <li><strong>Google-Login trennen:</strong> In Ihren Google-Kontoeinstellungen unter „Drittanbieter-Apps"</li>
+    </ul>
+    <p>
+      Nach Kontolöschung werden alle zugehörigen Belege, Fotos und Profildaten unwiderruflich entfernt.
+    </p>
+  </section>
+
+  <section id="kontakt">
+    <h2><span class="num">8</span> Kontakt</h2>
+    <div class="contact-card">
+      <p>Bei Fragen zum Datenschutz oder zur Ausübung Ihrer Rechte:</p>
+      <p><strong>App:</strong> BeihilfeCheck</p>
+      <p><strong>GitHub:</strong> <a href="https://github.com/ille1392/beihilfe-pwa" target="_blank">github.com/ille1392/beihilfe-pwa</a></p>
+      <p style="margin-top:16px; font-size:14px; color:#5a7a74;">
+        Diese Datenschutzerklärung gilt für die BeihilfeCheck Progressive Web App (PWA) sowie die
+        Android-App im Google Play Store.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>© 2026 BeihilfeCheck · <a href="https://ille1392.github.io/beihilfe-pwa/">Zur App</a> · <a href="#">Datenschutz</a></p>
+  <p style="margin-top:6px;">Diese Datenschutzerklärung wurde zuletzt im April 2026 aktualisiert.</p>
+</footer>
+
+</body>
+</html>
