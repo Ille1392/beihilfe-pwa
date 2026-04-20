@@ -50,6 +50,34 @@
 .google-btn:active{transform:scale(.98)}
 .google-icon{width:24px;height:24px}
 .login-footer{margin-top:20px;font-size:.85em;color:#718096}
+.login-footer a{color:#00c9a7;text-decoration:none;font-weight:600}
+
+/* EINWILLIGUNGS-DIALOG */
+#consentOverlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+#consentOverlay.show{display:flex}
+.consent-card{background:white;border-radius:24px;padding:32px 28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.consent-icon{font-size:2.5em;text-align:center;margin-bottom:12px}
+.consent-title{font-family:'Nunito',sans-serif;font-size:1.4em;font-weight:900;color:#2d3748;text-align:center;margin-bottom:8px}
+.consent-text{font-size:.88em;color:#718096;line-height:1.7;margin-bottom:20px}
+.consent-text strong{color:#2d3748}
+.consent-check{display:flex;align-items:flex-start;gap:10px;background:#f0fdf9;border:1.5px solid #00c9a7;border-radius:12px;padding:14px;margin-bottom:20px;cursor:pointer}
+.consent-check input[type=checkbox]{width:18px;height:18px;accent-color:#00c9a7;flex-shrink:0;margin-top:2px;cursor:pointer}
+.consent-check label{font-size:.85em;color:#2d3748;line-height:1.5;cursor:pointer}
+.consent-check label a{color:#00c9a7;font-weight:600}
+.consent-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00c9a7,#4facfe);color:white;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1em;cursor:pointer;opacity:.4;pointer-events:none;transition:all .2s}
+.consent-btn.ready{opacity:1;pointer-events:auto}
+
+/* KONTO LÖSCHEN MODAL */
+#deleteModal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+#deleteModal.show{display:flex}
+.delete-card{background:white;border-radius:24px;padding:32px 28px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.delete-icon{font-size:2.5em;text-align:center;margin-bottom:12px}
+.delete-title{font-family:'Nunito',sans-serif;font-size:1.3em;font-weight:900;color:#2d3748;text-align:center;margin-bottom:8px}
+.delete-text{font-size:.88em;color:#718096;line-height:1.7;margin-bottom:20px;text-align:center}
+.delete-warning{background:#fff0f0;border:1.5px solid #ff6b6b;border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:.83em;color:#c53030;line-height:1.5}
+.delete-buttons{display:flex;gap:10px}
+.delete-cancel{flex:1;padding:13px;border:1.5px solid #e8edf3;border-radius:12px;background:white;color:#718096;font-family:'Nunito Sans',sans-serif;font-weight:700;cursor:pointer}
+.delete-confirm{flex:1;padding:13px;border:none;border-radius:12px;background:#ff6b6b;color:white;font-family:'Nunito Sans',sans-serif;font-weight:700;cursor:pointer}
 
 /* ══════════════════════════════════════
    THEME VARIABLES
@@ -221,6 +249,46 @@ input::placeholder{color:var(--muted)}
 </head>
 <body>
 
+<!-- EINWILLIGUNGS-DIALOG -->
+<div id="consentOverlay">
+<div class="consent-card">
+  <div class="consent-icon">🔒</div>
+  <div class="consent-title">Datenschutz & Einwilligung</div>
+  <div class="consent-text">
+    BeihilfeCheck verarbeitet <strong>Gesundheitsdaten</strong> (Arztbelege, Rechnungen).
+    Diese Daten werden verschlüsselt in Ihrer persönlichen Firebase-Cloud gespeichert
+    und sind nur für Sie zugänglich.
+  </div>
+  <div class="consent-check" onclick="document.getElementById('consentCheckbox').click()">
+    <input type="checkbox" id="consentCheckbox" onchange="toggleConsentBtn()">
+    <label for="consentCheckbox">
+      Ich stimme der Verarbeitung meiner Gesundheitsdaten gemäß der
+      <a href="datenschutz.html" target="_blank" onclick="event.stopPropagation()">Datenschutzerklärung</a> zu.
+      Ich bin damit einverstanden, dass meine Daten verschlüsselt bei Google Firebase (EU) gespeichert werden.
+    </label>
+  </div>
+  <button class="consent-btn" id="consentBtn" onclick="acceptConsent()">Zustimmen & App nutzen</button>
+</div>
+</div>
+
+<!-- KONTO LÖSCHEN MODAL -->
+<div id="deleteModal">
+<div class="delete-card">
+  <div class="delete-icon">⚠️</div>
+  <div class="delete-title">Konto löschen</div>
+  <div class="delete-text">Möchten Sie Ihr Konto wirklich dauerhaft löschen?</div>
+  <div class="delete-warning">
+    🗑️ <strong>Alle Ihre Daten werden unwiderruflich gelöscht:</strong><br>
+    Alle Belege, Fotos, Personen und Ihr Anmeldekonto bei BeihilfeCheck.
+    Diese Aktion kann nicht rückgängig gemacht werden.
+  </div>
+  <div class="delete-buttons">
+    <button class="delete-cancel" onclick="document.getElementById('deleteModal').classList.remove('show')">Abbrechen</button>
+    <button class="delete-confirm" id="deleteConfirmBtn" onclick="deleteAccount()">Konto löschen</button>
+  </div>
+</div>
+</div>
+
 <!-- SPLASH -->
 <div id="splashScreen">
 <svg class="splash-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -250,7 +318,7 @@ input::placeholder{color:var(--muted)}
 <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
 Mit Google anmelden
 </button>
-<div class="login-footer">Sicher & kostenlos</div>
+<div class="login-footer">Sicher & kostenlos · <a href="datenschutz.html" target="_blank">Datenschutz</a> · <a href="impressum.html" target="_blank">Impressum</a></div>
 </div>
 </div>
 
@@ -286,6 +354,7 @@ Mit Google anmelden
 <span id="userName"></span>
 </div>
 <button class="logout-btn" id="logoutBtn">Abmelden</button>
+<button class="logout-btn" style="background:var(--red-bg);color:var(--red);border-color:rgba(248,113,113,.2);margin-top:4px" onclick="document.getElementById('deleteModal').classList.add('show')">🗑️ Konto löschen</button>
 </div>
 
 <!-- ÜBERSICHT -->
@@ -538,6 +607,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('loginScreen').classList.add('show');
     document.getElementById('mainApp').style.display = 'none';
     document.getElementById('bottomNav').style.display = 'none';
+    checkConsent();
   }
 });
 
@@ -553,6 +623,53 @@ document.getElementById('googleLoginBtn').addEventListener('click', async () => 
 document.getElementById('logoutBtn').addEventListener('click', () => {
   if (confirm('Wirklich abmelden?')) auth.signOut();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EINWILLIGUNG
+// ═══════════════════════════════════════════════════════════════════════════════
+function toggleConsentBtn() {
+  const cb = document.getElementById('consentCheckbox');
+  const btn = document.getElementById('consentBtn');
+  btn.classList.toggle('ready', cb.checked);
+}
+
+function acceptConsent() {
+  localStorage.setItem('consentGiven', '1');
+  document.getElementById('consentOverlay').classList.remove('show');
+}
+
+function checkConsent() {
+  if (!localStorage.getItem('consentGiven')) {
+    document.getElementById('consentOverlay').classList.add('show');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KONTO LÖSCHEN
+// ═══════════════════════════════════════════════════════════════════════════════
+async function deleteAccount() {
+  if (!currentUser) return;
+  const btn = document.getElementById('deleteConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Wird gelöscht...';
+  try {
+    // 1. Alle Firebase-Daten löschen
+    await db.ref('users/' + currentUser.uid).remove();
+    // 2. Auth-Konto löschen
+    await currentUser.delete();
+    document.getElementById('deleteModal').classList.remove('show');
+    alert('✅ Ihr Konto und alle Daten wurden gelöscht.');
+  } catch (err) {
+    if (err.code === 'auth/requires-recent-login') {
+      alert('⚠️ Bitte melden Sie sich kurz ab und wieder an, dann erneut versuchen.');
+      auth.signOut();
+    } else {
+      alert('❌ Fehler: ' + err.message);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Konto löschen';
+  }
+}
 
 // NAVIGATION
 function showSection(id) {

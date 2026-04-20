@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impressum – BeihilfeCheck</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --teal: #00c9a7;
+      --teal-dark: #00a389;
+      --teal-light: #e0faf5;
+      --ink: #1a2e2a;
+      --muted: #5a7a74;
+      --border: #c8eae4;
+      --bg: #f5fefa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.75; font-size: 16px; }
+
+    header {
+      background: var(--teal);
+      color: white;
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+    header .logo { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    header .logo-icon { width: 44px; height: 44px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    header .logo-text { font-family: 'DM Serif Display', serif; font-size: 24px; }
+    header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(26px, 5vw, 38px); font-weight: 400; margin-bottom: 8px; }
+    header p { opacity: .85; font-size: 15px; font-weight: 300; }
+
+    .container { max-width: 700px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .notice {
+      background: var(--teal-light);
+      border-left: 4px solid var(--teal);
+      border-radius: 0 12px 12px 0;
+      padding: 18px 22px;
+      margin-bottom: 40px;
+      font-size: .92em;
+      color: var(--ink);
+    }
+
+    section { margin-bottom: 40px; }
+    section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      font-weight: 400;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--teal-light);
+    }
+    p { margin-bottom: 10px; color: #2d4a44; }
+    a { color: var(--teal-dark); }
+    strong { color: var(--ink); font-weight: 500; }
+
+    .info-block {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+    }
+    .info-block p { margin-bottom: 6px; }
+
+    footer { text-align: center; padding: 32px 24px; background: white; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+    footer a { color: var(--teal-dark); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧾</div>
+    <span class="logo-text">BeihilfeCheck</span>
+  </div>
+  <h1>Impressum</h1>
+  <p>Angaben gemäß § 5 TMG</p>
+</header>
+
+<div class="container">
+
+  <div class="notice">
+    ℹ️ BeihilfeCheck ist eine <strong>private, nicht-kommerzielle Anwendung</strong> zur persönlichen Verwaltung von Beihilfebelegen. Es werden keine Waren oder Dienstleistungen angeboten.
+  </div>
+
+  <section>
+    <h2>Betreiber</h2>
+    <div class="info-block">
+      <p><strong>Name:</strong> Kai Ilskens</p>
+      <p><strong>E-Mail:</strong> <a href="mailto:kai.ilskens@googlemail.com">kai.ilskens@googlemail.com</a></p>
+      <p><strong>GitHub:</strong> <a href="https://github.com/ille1392/beihilfe-pwa" target="_blank">github.com/ille1392/beihilfe-pwa</a></p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Haftungsausschluss</h2>
+    <p>
+      Die Berechnungen in BeihilfeCheck dienen als <strong>Orientierungshilfe</strong> und ersetzen keine
+      rechtliche oder steuerliche Beratung. Für die Richtigkeit der Beihilfeberechnung wird keine
+      Gewähr übernommen. Maßgeblich sind stets die aktuellen Beihilfevorschriften der zuständigen
+      Behörde.
+    </p>
+    <p>
+      Der Betreiber übernimmt keine Haftung für Schäden, die durch die Nutzung dieser App entstehen.
+    </p>
+  </section>
+
+  <section>
+    <h2>Externe Dienste</h2>
+    <p>
+      Die App nutzt <strong>Google Firebase</strong> (Google Ireland Limited, Gordon House, Barrow Street,
+      Dublin 4, Irland) für Authentifizierung und Datenspeicherung. Es gelten die
+      <a href="https://firebase.google.com/support/privacy" target="_blank">Datenschutzbestimmungen von Firebase</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Urheberrecht</h2>
+    <p>
+      Die durch den Betreiber erstellten Inhalte und Werke in dieser App unterliegen dem deutschen
+      Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung
+      außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des Betreibers.
+    </p>
+  </section>
+
+</div>
+
+<footer>
+  <p>© 2026 BeihilfeCheck ·
+    <a href="https://ille1392.github.io/beihilfe-pwa/">Zur App</a> ·
+    <a href="datenschutz.html">Datenschutz</a>
+  </p>
+</footer>
+
+</body>
+</html>
