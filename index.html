@@ -60,10 +60,13 @@
 .consent-title{font-family:'Nunito',sans-serif;font-size:1.4em;font-weight:900;color:#2d3748;text-align:center;margin-bottom:8px}
 .consent-text{font-size:.88em;color:#718096;line-height:1.7;margin-bottom:20px}
 .consent-text strong{color:#2d3748}
-.consent-check{display:flex;align-items:flex-start;gap:10px;background:#f0fdf9;border:1.5px solid #00c9a7;border-radius:12px;padding:14px;margin-bottom:20px;cursor:pointer}
-.consent-check input[type=checkbox]{width:18px;height:18px;accent-color:#00c9a7;flex-shrink:0;margin-top:2px;cursor:pointer}
-.consent-check label{font-size:.85em;color:#2d3748;line-height:1.5;cursor:pointer}
-.consent-check label a{color:#00c9a7;font-weight:600}
+.consent-check{display:flex;align-items:flex-start;gap:12px;background:#f0fdf9;border:1.5px solid #00c9a7;border-radius:12px;padding:14px;margin-bottom:20px;cursor:pointer;-webkit-tap-highlight-color:rgba(0,201,167,.2)}
+.consent-check:active{background:#d0f5ec}
+.consent-box{width:22px;height:22px;border:2px solid #00c9a7;border-radius:6px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;background:white;transition:all .15s}
+.consent-box.checked{background:#00c9a7;border-color:#00c9a7}
+.consent-box.checked::after{content:'✓';color:white;font-size:14px;font-weight:900;line-height:1}
+.consent-label{font-size:.85em;color:#2d3748;line-height:1.5;pointer-events:none}
+.consent-label a{color:#00c9a7;font-weight:600;pointer-events:auto}
 .consent-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00c9a7,#4facfe);color:white;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1em;cursor:pointer;opacity:.4;pointer-events:none;transition:all .2s}
 .consent-btn.ready{opacity:1;pointer-events:auto}
 
@@ -259,13 +262,13 @@ input::placeholder{color:var(--muted)}
     Diese Daten werden verschlüsselt in Ihrer persönlichen Firebase-Cloud gespeichert
     und sind nur für Sie zugänglich.
   </div>
-  <div class="consent-check">
-    <input type="checkbox" id="consentCheckbox" onchange="toggleConsentBtn()">
-    <label for="consentCheckbox">
+  <div class="consent-check" id="consentCheck" onclick="toggleConsent()">
+    <div class="consent-box" id="consentBox"></div>
+    <span class="consent-label">
       Ich stimme der Verarbeitung meiner Gesundheitsdaten gemäß der
       <a href="datenschutz.html" target="_blank" onclick="event.stopPropagation()">Datenschutzerklärung</a> zu.
       Ich bin damit einverstanden, dass meine Daten verschlüsselt bei Google Firebase (EU) gespeichert werden.
-    </label>
+    </span>
   </div>
   <button class="consent-btn" id="consentBtn" onclick="acceptConsent()">Zustimmen & App nutzen</button>
 </div>
@@ -627,10 +630,12 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // EINWILLIGUNG
 // ═══════════════════════════════════════════════════════════════════════════════
-function toggleConsentBtn() {
-  const cb = document.getElementById('consentCheckbox');
+let consentChecked = false;
+function toggleConsent() {
+  consentChecked = !consentChecked;
+  document.getElementById('consentBox').classList.toggle('checked', consentChecked);
   const btn = document.getElementById('consentBtn');
-  btn.classList.toggle('ready', cb.checked);
+  btn.classList.toggle('ready', consentChecked);
 }
 
 function acceptConsent() {
