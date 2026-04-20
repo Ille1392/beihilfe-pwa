@@ -185,6 +185,22 @@ input::placeholder{color:var(--muted)}
 .amt-val.av-blue{color:var(--blue)}
 
 .status-row{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1.5px solid var(--border)}
+.note-btn{background:var(--surface2);color:var(--muted);border:1.5px solid var(--border);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.82em;font-weight:600;font-family:var(--body-font);transition:all .2s;white-space:nowrap}
+.note-btn.has-note{background:var(--orange-bg);color:var(--orange);border-color:rgba(255,169,77,.3)}
+.note-box{margin-top:10px;background:var(--orange-bg);border:1.5px solid rgba(255,169,77,.3);border-radius:10px;padding:10px 12px;font-size:.83em;color:var(--orange);line-height:1.5;display:flex;gap:8px;align-items:flex-start}
+.note-box span{flex:1}
+
+/* NOTIZ MODAL */
+#noteModal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+#noteModal.show{display:flex}
+.note-card{background:var(--surface);border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:520px;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
+.note-card-title{font-weight:700;font-size:1em;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.note-card textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:.95em;font-family:var(--body-font);color:var(--text);background:var(--surface2);resize:none;height:100px;transition:border-color .2s}
+.note-card textarea:focus{outline:none;border-color:var(--orange)}
+.note-card-buttons{display:flex;gap:10px;margin-top:12px}
+.note-save{flex:1;padding:13px;border:none;border-radius:12px;background:var(--orange);color:white;font-family:var(--body-font);font-weight:700;cursor:pointer;font-size:.95em}
+.note-delete{padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--muted);font-family:var(--body-font);font-weight:700;cursor:pointer;font-size:.95em}
+.note-cancel{padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--muted);font-family:var(--body-font);font-weight:700;cursor:pointer}
 .check-toggle{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:.8em;font-weight:600;cursor:pointer;transition:all .2s;color:var(--muted);font-family:var(--body-font)}
 .check-toggle.on-b{background:var(--check-beihilfe-bg);border-color:var(--check-beihilfe-border);color:var(--check-beihilfe-color)}
 .check-toggle.on-p{background:var(--check-pkv-bg);border-color:var(--check-pkv-border);color:var(--check-pkv-color)}
@@ -271,6 +287,19 @@ input::placeholder{color:var(--muted)}
     </span>
   </div>
   <button class="consent-btn" id="consentBtn" onclick="acceptConsent()">Zustimmen & App nutzen</button>
+</div>
+</div>
+
+<!-- NOTIZ MODAL -->
+<div id="noteModal">
+<div class="note-card">
+  <div class="note-card-title">📝 Notiz zum Beleg</div>
+  <textarea id="noteText" placeholder="z.B. Nur teilweise erstattet, Widerspruch eingereicht, fehlende Unterlagen..."></textarea>
+  <div class="note-card-buttons">
+    <button class="note-cancel" onclick="closeNoteModal()">Abbrechen</button>
+    <button class="note-delete" id="noteDeleteBtn" onclick="saveNote('')">🗑️ Löschen</button>
+    <button class="note-save" onclick="saveNote(document.getElementById('noteText').value)">💾 Speichern</button>
+  </div>
 </div>
 </div>
 
@@ -1325,8 +1354,39 @@ function renderBelege(belege) {
       <div class="status-row">
         <div class="check-toggle ${b.beihilfeBezahlt ? 'on-b' : ''}" onclick="toggleStatus('${b.id}','beihilfeBezahlt',${!b.beihilfeBezahlt})">${b.beihilfeBezahlt ? '✅' : '⬜'} Beihilfe bezahlt</div>
         <div class="check-toggle ${b.pkvBezahlt ? 'on-p' : ''}" onclick="toggleStatus('${b.id}','pkvBezahlt',${!b.pkvBezahlt})">${b.pkvBezahlt ? '✅' : '⬜'} PKV bezahlt</div>
+        <button class="note-btn ${b.notiz ? 'has-note' : ''}" onclick="openNoteModal('${b.id}','${(b.notiz||'').replace(/'/g,"\\'")}')">📝${b.notiz ? ' ✓' : ''}</button>
       </div>
+      ${b.notiz ? `<div class="note-box">📝 <span>${b.notiz}</span></div>` : ''}
     </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NOTIZ
+// ══════════════════════════════════════════════════════════════════════════════
+let currentNoteId = null;
+
+function openNoteModal(id, existingNote) {
+  currentNoteId = id;
+  document.getElementById('noteText').value = existingNote || '';
+  document.getElementById('noteDeleteBtn').style.display = existingNote ? 'block' : 'none';
+  document.getElementById('noteModal').classList.add('show');
+  setTimeout(() => document.getElementById('noteText').focus(), 100);
+}
+
+function closeNoteModal() {
+  document.getElementById('noteModal').classList.remove('show');
+  currentNoteId = null;
+}
+
+async function saveNote(text) {
+  if (!currentNoteId || !currentUser) return;
+  const trimmed = text.trim();
+  try {
+    await db.ref('users/' + currentUser.uid + '/belege/' + currentNoteId + '/notiz').set(trimmed || null);
+    closeNoteModal();
+  } catch (e) {
+    alert('❌ Fehler: ' + e.message);
+  }
 }
 
 function stats(b) {
