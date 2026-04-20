@@ -164,8 +164,17 @@ input::placeholder{color:var(--muted)}
 .save-btn:disabled{opacity:.5;cursor:not-allowed}
 
 /* BELEG ITEMS */
-.beleg-item{border:1.5px solid var(--border);border-radius:16px;padding:15px;margin-bottom:10px;background:var(--surface);transition:all .3s}
-.beleg-item:hover{border-color:var(--accent-dim)}
+.beleg-item{border:1.5px solid var(--border);border-radius:16px;padding:0;margin-bottom:12px;background:var(--surface);transition:all .3s;overflow:hidden;box-shadow:var(--shadow)}
+.beleg-item:nth-child(odd){background:var(--surface)}
+.beleg-item:nth-child(even){background:var(--surface2)}
+.beleg-item-inner{padding:14px 15px}
+.beleg-header{display:flex;align-items:center;gap:0;margin-bottom:0}
+.beleg-colorbar{width:5px;align-self:stretch;flex-shrink:0;border-radius:0}
+.beleg-colorbar-50{background:var(--orange)}
+.beleg-colorbar-70{background:var(--red)}
+.beleg-colorbar-80{background:var(--teal,#00c9a7)}
+.beleg-num{font-size:.7em;font-weight:700;color:var(--muted);background:var(--bg);border-radius:6px;padding:2px 7px;margin-right:8px;font-family:var(--body-font);flex-shrink:0}
+.beleg-item:hover{border-color:var(--accent-dim);box-shadow:0 4px 20px rgba(0,201,167,.1)}
 .beleg-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .beleg-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.78em;font-weight:700}
 .badge-50{background:var(--badge50-bg);color:var(--badge50-color)}
@@ -1335,28 +1344,34 @@ function renderBelege(belege) {
     el.innerHTML = '<div class="no-belege">Noch keine Belege.<br>Tippen Sie unten auf ➕</div>';
     return;
   }
-  el.innerHTML = belege.map(b => `
+  el.innerHTML = belege.map((b, i) => `
     <div class="beleg-item">
-      <div class="beleg-top">
-        <div>
-          <span class="beleg-badge badge-${b.beihilfeSatz}">${b.personName || 'Unbekannt'} (${b.beihilfeSatz}%)</span>
-          ${b.beschreibung ? `<div class="beleg-desc">${b.beschreibung}</div>` : ''}
-          <div class="beleg-date">📅 ${datFmt(b.datum)}</div>
+      <div style="display:flex">
+        <div class="beleg-colorbar beleg-colorbar-${b.beihilfeSatz}"></div>
+        <div class="beleg-item-inner" style="flex:1">
+          <div class="beleg-top">
+            <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">
+              <span class="beleg-num">#${belege.length - i}</span>
+              <span class="beleg-badge badge-${b.beihilfeSatz}">${b.personName || 'Unbekannt'} (${b.beihilfeSatz}%)</span>
+              ${b.beschreibung ? `<div class="beleg-desc" style="width:100%">${b.beschreibung}</div>` : ''}
+              <div class="beleg-date">📅 ${datFmt(b.datum)}</div>
+            </div>
+            <button class="del-btn" onclick="deleteBeleg('${b.id}')">🗑️</button>
+          </div>
+          ${b.image ? `<img src="${b.image}" class="preview-img" style="display:block">` : ''}
+          <div class="beleg-amounts">
+            <div class="amt-item"><div class="amt-lbl">Rechnung</div><div class="amt-val av-accent">${eur(b.betrag)}</div></div>
+            <div class="amt-item"><div class="amt-lbl">Beihilfe</div><div class="amt-val av-green">${eur(b.beihilfeBetrag)}</div></div>
+            <div class="amt-item"><div class="amt-lbl">PKV</div><div class="amt-val av-blue">${eur(b.pkvBetrag)}</div></div>
+          </div>
+          <div class="status-row">
+            <div class="check-toggle ${b.beihilfeBezahlt ? 'on-b' : ''}" onclick="toggleStatus('${b.id}','beihilfeBezahlt',${!b.beihilfeBezahlt})">${b.beihilfeBezahlt ? '✅' : '⬜'} Beihilfe bezahlt</div>
+            <div class="check-toggle ${b.pkvBezahlt ? 'on-p' : ''}" onclick="toggleStatus('${b.id}','pkvBezahlt',${!b.pkvBezahlt})">${b.pkvBezahlt ? '✅' : '⬜'} PKV bezahlt</div>
+            <button class="note-btn ${b.notiz ? 'has-note' : ''}" onclick="openNoteModal('${b.id}','${(b.notiz||'').replace(/'/g,"\\'")}')">📝${b.notiz ? ' ✓' : ''}</button>
+          </div>
+          ${b.notiz ? `<div class="note-box">📝 <span>${b.notiz}</span></div>` : ''}
         </div>
-        <button class="del-btn" onclick="deleteBeleg('${b.id}')">🗑️</button>
       </div>
-      ${b.image ? `<img src="${b.image}" class="preview-img" style="display:block">` : ''}
-      <div class="beleg-amounts">
-        <div class="amt-item"><div class="amt-lbl">Rechnung</div><div class="amt-val av-accent">${eur(b.betrag)}</div></div>
-        <div class="amt-item"><div class="amt-lbl">Beihilfe</div><div class="amt-val av-green">${eur(b.beihilfeBetrag)}</div></div>
-        <div class="amt-item"><div class="amt-lbl">PKV</div><div class="amt-val av-blue">${eur(b.pkvBetrag)}</div></div>
-      </div>
-      <div class="status-row">
-        <div class="check-toggle ${b.beihilfeBezahlt ? 'on-b' : ''}" onclick="toggleStatus('${b.id}','beihilfeBezahlt',${!b.beihilfeBezahlt})">${b.beihilfeBezahlt ? '✅' : '⬜'} Beihilfe bezahlt</div>
-        <div class="check-toggle ${b.pkvBezahlt ? 'on-p' : ''}" onclick="toggleStatus('${b.id}','pkvBezahlt',${!b.pkvBezahlt})">${b.pkvBezahlt ? '✅' : '⬜'} PKV bezahlt</div>
-        <button class="note-btn ${b.notiz ? 'has-note' : ''}" onclick="openNoteModal('${b.id}','${(b.notiz||'').replace(/'/g,"\\'")}')">📝${b.notiz ? ' ✓' : ''}</button>
-      </div>
-      ${b.notiz ? `<div class="note-box">📝 <span>${b.notiz}</span></div>` : ''}
     </div>`).join('');
 }
 
