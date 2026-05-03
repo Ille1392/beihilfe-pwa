@@ -405,6 +405,10 @@ Mit Google anmelden
 <div class="stat-card"><div class="stat-icon">🏛️</div><div class="stat-val sv2" id="totalBeihilfe">0 €</div><div class="stat-lbl">Beihilfe</div></div>
 <div class="stat-card"><div class="stat-icon">💊</div><div class="stat-val sv3" id="totalPKV">0 €</div><div class="stat-lbl">PKV</div></div>
 </div>
+<div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start">
+  <span style="font-size:1.1em;flex-shrink:0">ℹ️</span>
+  <span style="font-size:.78em;color:var(--muted);line-height:1.5">Alle Berechnungen sind unverbindlich. Maßgeblich sind die Bescheide der zuständigen Beihilfestelle.</span>
+</div>
 <div class="card">
 <div class="card-title">📋 Ihre Belege</div>
 <div id="belegeListe"><div class="no-belege">Noch keine Belege.<br>Tippen Sie unten auf ➕</div></div>
@@ -431,39 +435,6 @@ Mit Google anmelden
 <input type="hidden" id="newPersonSatz">
 </div>
 <button class="save-btn" onclick="addPerson()">➕ Person hinzufügen</button>
-</div>
-</div>
-
-<!-- NEUER BELEG MIT OCR -->
-<div id="newBelegSection" class="section">
-<button class="back-btn" onclick="showSection('statsSection')">← Zurück</button>
-<div style="background:#fff4e6;border:1.5px solid #ffa94d;border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
-  <span style="font-size:1.4em;flex-shrink:0">⚠️</span>
-  <div>
-    <div style="font-weight:700;color:#e67700;font-size:.9em;margin-bottom:4px">Beta-Funktion – noch in Entwicklung</div>
-    <div style="font-size:.82em;color:#a05a00;line-height:1.5">Die automatische Belegerkennung kann Fehler enthalten. <strong>Bitte prüfen Sie alle erkannten Werte</strong> (Betrag, Datum, Beschreibung) sorgfältig bevor Sie speichern.</div>
-  </div>
-</div>
-<div class="card">
-<div class="card-title">📸 FotoUpload mit automatischer Erkennung</div>
-<div class="form-group">
-<label class="form-label">Erkennungsmodus</label>
-<div class="satz-group">
-<button type="button" class="satz-btn s80" id="ocrEngineCloud" onclick="selectOcrEngine('cloud')">☁️ Cloud<span class="satz-sub">Beste Erkennung</span></button>
-<button type="button" class="satz-btn" id="ocrEngineLocal" onclick="selectOcrEngine('local')">💻 Lokal<span class="satz-sub">Offline</span></button>
-</div>
-<div style="font-size:.8em;color:var(--muted);margin-top:8px;text-align:center" id="ocrEngineInfo">☁️ Cloud: ~98% Genauigkeit (empfohlen!)</div>
-</div>
-<div class="upload-area" id="uploadArea">
-<div class="u-icon">📎</div>
-<div class="u-title">Rechnungen hochladen oder fotografieren</div>
-<div class="u-hint">Mehrere Dateien gleichzeitig möglich • Automatische Erkennung</div>
-<input type="file" id="fileInput" accept="image/*" capture="environment" multiple>
-</div>
-<div id="uploadPreview" class="upload-preview"></div>
-<div id="ocrProgress" class="ocr-progress" style="display:none"></div>
-<div id="zuordnungContainer"></div>
-<button class="save-btn" id="saveBelegeBtn" style="display:none" onclick="saveBelege()">💾 Alle Belege speichern</button>
 </div>
 </div>
 
@@ -528,8 +499,7 @@ Mit Google anmelden
 <div class="nav-tabs">
 <div class="nav-tab active" id="nav-stats" onclick="showSection('statsSection')"><span class="ni">📊</span><span class="nl">Übersicht</span></div>
 <div class="nav-tab" id="nav-personen" onclick="showSection('personenSection')"><span class="ni">👥</span><span class="nl">Personen</span></div>
-<div class="nav-tab" id="nav-new" onclick="showSection('newBelegSection')"><span class="ni">📸</span><span class="nl">FotoUpload</span></div>
-<div class="nav-tab" id="nav-manual" onclick="showSection('manualSection')"><span class="ni">✍️</span><span class="nl">Manuell</span></div>
+<div class="nav-tab" id="nav-manual" onclick="showSection('manualSection')"><span class="ni">✍️</span><span class="nl">Neu</span></div>
 </div>
 <div class="nav-footer-link"><a href="datenschutz.html" target="_blank">🔒 Datenschutz</a> · <a href="impressum.html" target="_blank">Impressum</a></div>
 </div>
@@ -727,7 +697,6 @@ function showSection(id) {
   document.getElementById(id).classList.add('active');
   document.getElementById('nav-stats').classList.toggle('active', id === 'statsSection');
   document.getElementById('nav-personen').classList.toggle('active', id === 'personenSection');
-  document.getElementById('nav-new').classList.toggle('active', id === 'newBelegSection');
   document.getElementById('nav-manual').classList.toggle('active', id === 'manualSection');
   window.scrollTo(0, 0);
   
